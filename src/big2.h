@@ -7,6 +7,7 @@
 
 #define CARD_AMOUNT 52
 #define MAX_PLAYERS 4
+#define MIN_PLAYERS 2
 
 typedef enum PACKED {
   RANK_3,
