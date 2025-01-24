@@ -1,6 +1,7 @@
 #include "big2.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void printCard(Card card) {
   switch (card.rank) {
@@ -67,16 +68,37 @@ void printCard(Card card) {
   printf("\n");
 }
 
-void printDeck(void) {
+PlayerCards dealDeck(uint16_t seed, uint8_t playerCount) {
+  srand(seed);
+
   Card deck[CARD_AMOUNT];
-  for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
-    for (int rank = 0; rank < RANK_AMOUNT; rank++) {
+  for (int rank = 0; rank < RANK_AMOUNT; rank++) {
+    for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
       Card card = {.rank = rank, .suit = suit};
-      deck[(RANK_AMOUNT * suit) + rank] = card;
+      int i = (RANK_AMOUNT * suit) + rank;
+      deck[i] = card;
     }
   }
 
-  for (int i = 0; i < CARD_AMOUNT; i++) {
-    printCard(deck[i]);
+  PlayerCards ret = {.playerCount = playerCount, .hands = {0}};
+  for (int i = 0; i < playerCount; i++) {
+    ret.hands[i] = (CardArray){.count = 0, .cards = {0}};
   }
+
+  int cardsPerPlayer = CARD_AMOUNT / playerCount;
+  int count = CARD_AMOUNT;
+  for (int player = 0; player < playerCount; player++) {
+    for (int i = 0; i < cardsPerPlayer; i++) {
+      int cardIndex = rand() % count;
+
+      Card card = deck[cardIndex];
+      deck[cardIndex] = deck[count - 1];
+      count -= 1;
+
+      ret.hands[player].cards[ret.hands[player].count] = card;
+      ret.hands[player].count++;
+    }
+  }
+
+  return ret;
 }
