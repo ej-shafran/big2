@@ -10,7 +10,10 @@ int main(void) {
     for (int j = 0; j < hand.count; j++) {
       printf("  ");
       printCard(hand.cards[j]);
+      if (j != hand.count - 1)
+        printf(" ");
     }
+    printf("\n");
   }
 
   return 0;

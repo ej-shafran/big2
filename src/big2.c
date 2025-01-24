@@ -64,8 +64,6 @@ void printCard(Card card) {
     case SUIT_AMOUNT:
       assert(0);
   }
-
-  printf("\n");
 }
 
 PlayerCards dealDeck(uint16_t seed, uint8_t playerCount) {
