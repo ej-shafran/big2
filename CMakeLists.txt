@@ -33,7 +33,7 @@ target_include_directories(big2_server PUBLIC .)
 if(MSVC)
   set(CMAKE_C_FLAGS_DEBUG "/D CLAY_DEBUG")
 else()
-  set(CMAKE_C_FLAGS_DEBUG "-Wall -Werror -Wno-error=missing-braces -DCLAY_DEBUG")
+  set(CMAKE_C_FLAGS_DEBUG "-ggdb -Wall -Werror -Wno-error=missing-braces -DCLAY_DEBUG")
   set(CMAKE_C_FLAGS_RELEASE "-O3")
 endif()
 
