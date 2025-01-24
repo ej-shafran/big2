@@ -71,6 +71,9 @@ int main(int argc, const char** argv) {
         fprintf(stderr, "invalid player count string\n");
         return EXIT_FAILURE;
       }
+    } else {
+      fprintf(stderr, "unrecognized argument %s\n", arg);
+      return EXIT_FAILURE;
     }
   }
 
