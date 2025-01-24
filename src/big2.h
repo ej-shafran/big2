@@ -33,19 +33,20 @@ typedef struct {
   CardSuit suit;
 } Card;
 
-typedef Card MaxSelectedCards[CARD_AMOUNT / 2];
+typedef Card MaxSelectedCards[CARD_AMOUNT / MIN_PLAYERS];
 
 typedef struct {
   MaxSelectedCards cards;
-  uint8_t count;
+  uint8_t cardCount;
 } CardArray;
 
 typedef struct {
-  CardArray hands[MAX_PLAYERS];
+  CardArray players[MAX_PLAYERS];
   uint8_t playerCount;
-} PlayerCards;
+  uint8_t currentPlayerIndex;
+} GameContext;
 
-PlayerCards dealDeck(uint8_t playerCount);
+GameContext generateGame(uint8_t playerCount);
 
 void printCard(Card card);
 

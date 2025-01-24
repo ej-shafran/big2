@@ -24,6 +24,36 @@ const char* shiftArg(int* argc, const char*** argv) {
   return arg;
 }
 
+void printPlayerCards(CardArray player,
+                      uint8_t selectedCardIndexes[CARD_AMOUNT / MIN_PLAYERS],
+                      uint8_t selectedCardCount) {
+  for (int cardIndex = 0; cardIndex < player.cardCount; cardIndex++) {
+    printf("   ");
+    bool isSelected = false;
+    for (int i = 0; i < selectedCardCount; i++) {
+      if (selectedCardIndexes[i] == cardIndex) {
+        isSelected = true;
+        break;
+      }
+    }
+    if (isSelected) {
+      printf("\033[41;30m");
+    }
+    printf("%02d", cardIndex + 1);
+    printf("\033[0m");
+    if (cardIndex != player.cardCount - 1)
+      printf(" ");
+  }
+  printf("\n");
+  for (int cardIndex = 0; cardIndex < player.cardCount; cardIndex++) {
+    printf("  ");
+    printCard(player.cards[cardIndex]);
+    if (cardIndex != player.cardCount - 1)
+      printf(" ");
+  }
+  printf("\n");
+}
+
 int main(int argc, const char** argv) {
   uint8_t playerCount = 4;
   uint64_t deterministicSeed = 0;
@@ -81,19 +111,58 @@ int main(int argc, const char** argv) {
   pcg32Srandom(seed, SEQ);
   printf("Seed: %lx\n\n", seed);
 
-  PlayerCards deck = dealDeck(playerCount);
+  GameContext gameContext = generateGame(playerCount);
 
-  for (int i = 0; i < deck.playerCount; i++) {
-    CardArray hand = deck.hands[i];
-    printf("Player %d:\n", i + 1);
-    for (int j = 0; j < hand.count; j++) {
-      printf("  ");
-      printCard(hand.cards[j]);
-      if (j != hand.count - 1)
-        printf(" ");
+  uint8_t selectedCardIndexes[CARD_AMOUNT / 2] = {0};
+  uint8_t selectedCardCount = 0;
+
+  printf("It is player %d's turn\n", gameContext.currentPlayerIndex);
+  CardArray player = gameContext.players[gameContext.currentPlayerIndex];
+  printPlayerCards(player, selectedCardIndexes, selectedCardCount);
+
+  char* line;
+  do {
+    printf("Enter what to do: ");
+    size_t lineLength;
+    ssize_t numberRead = getline(&line, &lineLength, stdin);
+    if (numberRead == -1) {
+      fprintf(stderr, "no input provided\n");
+      return EXIT_FAILURE;
     }
-    printf("\n");
-  }
 
+    if (strcmp(line, "done\n") == 0)
+      break;
+
+    char* endPointer;
+    errno = 0;
+    uint64_t playedCardNumber = strtoul(line, &endPointer, 10);
+    if (errno != 0) {
+      perror(NULL);
+      return EXIT_FAILURE;
+    }
+
+    if (endPointer == line || playedCardNumber > player.cardCount) {
+      fprintf(stderr, "invalid card index string\n");
+      return EXIT_FAILURE;
+    }
+
+    ssize_t alreadySelectedIndex = -1;
+    for (int i = 0; i < selectedCardCount; i++) {
+      if (selectedCardIndexes[i] == playedCardNumber - 1) {
+        alreadySelectedIndex = i;
+        break;
+      }
+    }
+    if (alreadySelectedIndex != -1) {
+      selectedCardIndexes[alreadySelectedIndex] =
+          selectedCardIndexes[--selectedCardCount];
+    } else {
+      selectedCardIndexes[selectedCardCount++] = playedCardNumber - 1;
+    }
+
+    printPlayerCards(player, selectedCardIndexes, selectedCardCount);
+  } while (true);
+
+  free(line);
   return 0;
 }

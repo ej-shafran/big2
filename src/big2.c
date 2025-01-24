@@ -66,7 +66,17 @@ void printCard(Card card) {
   }
 }
 
-PlayerCards dealDeck(uint8_t playerCount) {
+GameContext generateGame(uint8_t playerCount) {
+  GameContext gameContext = {
+      .players = {0},
+      .currentPlayerIndex = 0,
+      .playerCount = playerCount,
+  };
+  for (int i = 0; i < playerCount; i++) {
+    gameContext.players[i] = (CardArray){.cardCount = 0, .cards = {0}};
+  }
+
+  // Create the standard deck of cards
   Card deck[CARD_AMOUNT];
   for (int rank = 0; rank < RANK_AMOUNT; rank++) {
     for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
@@ -76,11 +86,7 @@ PlayerCards dealDeck(uint8_t playerCount) {
     }
   }
 
-  PlayerCards ret = {.playerCount = playerCount, .hands = {0}};
-  for (int i = 0; i < playerCount; i++) {
-    ret.hands[i] = (CardArray){.count = 0, .cards = {0}};
-  }
-
+  // Deal random hands to players
   int cardsPerPlayer = CARD_AMOUNT / playerCount;
   int count = CARD_AMOUNT;
   for (int player = 0; player < playerCount; player++) {
@@ -91,10 +97,11 @@ PlayerCards dealDeck(uint8_t playerCount) {
       deck[cardIndex] = deck[count - 1];
       count -= 1;
 
-      ret.hands[player].cards[ret.hands[player].count] = card;
-      ret.hands[player].count++;
+      gameContext.players[player].cards[gameContext.players[player].cardCount] =
+          card;
+      gameContext.players[player].cardCount++;
     }
   }
 
-  return ret;
+  return gameContext;
 }
