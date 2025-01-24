@@ -1,7 +1,7 @@
 #include "big2.h"
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include "utils/pcg_basic.h"
 
 void printCard(Card card) {
   switch (card.rank) {
@@ -66,9 +66,7 @@ void printCard(Card card) {
   }
 }
 
-PlayerCards dealDeck(uint16_t seed, uint8_t playerCount) {
-  srand(seed);
-
+PlayerCards dealDeck(uint8_t playerCount) {
   Card deck[CARD_AMOUNT];
   for (int rank = 0; rank < RANK_AMOUNT; rank++) {
     for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
@@ -87,7 +85,7 @@ PlayerCards dealDeck(uint16_t seed, uint8_t playerCount) {
   int count = CARD_AMOUNT;
   for (int player = 0; player < playerCount; player++) {
     for (int i = 0; i < cardsPerPlayer; i++) {
-      int cardIndex = rand() % count;
+      int cardIndex = pcg32Boundedrand(count);
 
       Card card = deck[cardIndex];
       deck[cardIndex] = deck[count - 1];

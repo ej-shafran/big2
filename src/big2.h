@@ -44,7 +44,7 @@ typedef struct {
   uint8_t playerCount;
 } PlayerCards;
 
-PlayerCards dealDeck(uint16_t seed, uint8_t playerCount);
+PlayerCards dealDeck(uint8_t playerCount);
 
 void printCard(Card card);
 

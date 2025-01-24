@@ -17,16 +17,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(raylib)
 
-add_executable(big2_gui src/clients/gui.c src/big2.c)
+add_executable(big2_gui src/clients/gui.c src/big2.c src/utils/pcg_basic.c)
 target_compile_options(big2_gui PUBLIC)
 target_include_directories(big2_gui PUBLIC .)
 target_link_libraries(big2_gui PUBLIC raylib)
 
-add_executable(big2_cli src/clients/cli.c src/big2.c)
+add_executable(big2_cli src/clients/cli.c src/big2.c src/utils/pcg_basic.c)
 target_compile_options(big2_cli PUBLIC)
 target_include_directories(big2_cli PUBLIC .)
 
-add_executable(big2_server src/server.c src/big2.c)
+add_executable(big2_server src/server.c src/big2.c src/utils/pcg_basic.c)
 target_compile_options(big2_server PUBLIC)
 target_include_directories(big2_server PUBLIC .)
 
