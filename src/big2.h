@@ -1,6 +1,7 @@
 #ifndef BIG2_H_
 #define BIG2_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define PACKED __attribute__((__packed__))
@@ -8,6 +9,7 @@
 #define CARD_AMOUNT 52
 #define MAX_PLAYERS 4
 #define MIN_PLAYERS 2
+#define MAX_HAND_SIZE 5
 
 typedef enum PACKED {
   RANK_3,
@@ -46,8 +48,29 @@ typedef struct {
   uint8_t currentPlayerIndex;
 } GameContext;
 
+typedef struct {
+  Card cards[MAX_HAND_SIZE];
+  uint8_t cardCount;
+} CardHand;
+
+typedef enum {
+  NO_HAND,
+  HIGH_CARD,
+  PAIR,
+  THREE_OF_A_KIND,
+  STRAIGHT,
+  FLUSH,
+  FULL_HOUSE,
+  FOUR_OF_A_KIND,
+  STRAIGHT_FLUSH,
+} HandKind;
+
 GameContext generateGame(uint8_t playerCount);
 
 void printCard(Card card);
+
+void printHandKind(HandKind kind);
+
+HandKind handKind(CardHand hand);
 
 #endif  // BIG2_H_

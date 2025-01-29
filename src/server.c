@@ -156,11 +156,22 @@ int main(int argc, const char** argv) {
     if (alreadySelectedIndex != -1) {
       selectedCardIndexes[alreadySelectedIndex] =
           selectedCardIndexes[--selectedCardCount];
-    } else {
+    } else if (selectedCardCount < 5) {
       selectedCardIndexes[selectedCardCount++] = playedCardNumber - 1;
+    } else {
+      printf("cannot select more than 5 cards\n");
     }
 
     printPlayerCards(player, selectedCardIndexes, selectedCardCount);
+    if (selectedCardCount > 5 || selectedCardCount == 0)
+      continue;
+    CardHand hand = {.cardCount = selectedCardCount, .cards = {0}};
+    for (int i = 0; i < selectedCardCount; i++) {
+      hand.cards[i] = player.cards[selectedCardIndexes[i]];
+    }
+    printf("Hand: ");
+    printHandKind(handKind(hand));
+    printf("\n");
   } while (true);
 
   free(line);
