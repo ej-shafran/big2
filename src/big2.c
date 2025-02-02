@@ -258,9 +258,8 @@ HandKind handKind(CardHand hand) {
     case 4:
       return NO_HAND;
     case 5: {
-      if (isFlush(hand)) {
+      if (isFlush(hand))
         return isStraight(hand) ? STRAIGHT_FLUSH : FLUSH;
-      }
 
       if (isStraight(hand))
         return STRAIGHT;
