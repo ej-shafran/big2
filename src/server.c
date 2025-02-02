@@ -109,7 +109,7 @@ int main(int argc, const char** argv) {
 
   uint64_t seed = deterministicSeed == 0 ? generateSeed() : deterministicSeed;
   pcg32Srandom(seed, SEQ);
-  printf("Seed: %lx\n\n", seed);
+  printf("Seed: %" PRIu64 "\n\n", seed);
 
   GameContext gameContext = generateGame(playerCount);
 
