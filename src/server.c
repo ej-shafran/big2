@@ -120,10 +120,10 @@ int main(int argc, const char** argv) {
   CardArray player = gameContext.players[gameContext.currentPlayerIndex];
   printPlayerCards(player, selectedCardIndexes, selectedCardCount);
 
-  char* line;
+  char* line = NULL;
   do {
     printf("Enter what to do: ");
-    size_t lineLength;
+    size_t lineLength = 0;
     ssize_t numberRead = getline(&line, &lineLength, stdin);
     if (numberRead == -1) {
       fprintf(stderr, "no input provided\n");
