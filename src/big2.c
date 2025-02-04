@@ -169,54 +169,21 @@ bool isStraight(CardHand hand) {
 
 bool isFullHouse(CardHand hand) {
   CardRank first = hand.cards[0].rank;
-  CardRank second = first;
-  bool hasPairOfFirst = false;
-  bool hasPairOfSecond = false;
-  for (int i = 1; i < hand.cardCount; i++) {
-    CardRank rank = hand.cards[i].rank;
-    if (rank == first) {
-      hasPairOfFirst = true;
-      continue;
-    }
+  CardRank last = hand.cards[4].rank;
 
-    if (first == second) {
-      second = rank;
-      continue;
-    }
-
-    if (rank != second)
-      return false;
-
-    hasPairOfSecond = true;
-  }
-  return first != second && hasPairOfFirst && hasPairOfSecond;
+  return (first == hand.cards[1].rank && last == hand.cards[3].rank &&
+          (first == hand.cards[2].rank || last == hand.cards[2].rank));
 }
 
 bool isFourOfAKind(CardHand hand) {
   CardRank first = hand.cards[0].rank;
-  CardRank second = first;
-  bool flipped = false;
-  for (int i = 1; i < hand.cardCount; i++) {
-    CardRank rank = hand.cards[i].rank;
-
-    if (rank == first)
-      continue;
-
-    if (second == first) {
-      second = rank;
-      continue;
-    }
-
-    if (!flipped && second == rank) {
-      flipped = true;
-      second = first;
-      first = rank;
-      continue;
-    }
-
-    return false;
+  CardRank last = hand.cards[4].rank;
+  CardRank rank = hand.cards[1].rank == first ? first : last;
+  for (int i = 1; i < hand.cardCount - 1; i++) {
+    if (hand.cards[i].rank != rank)
+      return false;
   }
-  return first != second;
+  return true;
 }
 
 uint8_t quicksortHandPartition(CardHand* hand, uint8_t low, uint8_t high) {
