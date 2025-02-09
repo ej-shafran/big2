@@ -20,8 +20,7 @@ GameContext generateGame(uint8_t playerCount) {
     gameContext.players.items[i] = player;
   }
 
-  // Create the standard deck of cards
-  Card deck[CARD_AMOUNT];
+  DeckOfCards deck = {0};
   for (int rank = 0; rank < RANK_AMOUNT; rank++) {
     for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
       Card card = {.rank = rank, .suit = suit};
