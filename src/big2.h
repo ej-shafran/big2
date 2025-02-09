@@ -76,10 +76,6 @@ typedef enum {
 
 GameContext generateGame(uint8_t playerCount);
 
-void printCard(Card card);
-
-void printHandKind(HandKind kind);
-
 HandKind handKind(PlayedCardHand hand);
 
 #endif  // BIG2_H_

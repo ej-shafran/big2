@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,6 +23,101 @@ const char* shiftArg(int* argc, const char*** argv) {
   *argc -= 1;
   *argv += 1;
   return arg;
+}
+
+void printCard(Card card) {
+  switch (card.rank) {
+    case RANK_3:
+      printf(" 3");
+      break;
+    case RANK_4:
+      printf(" 4");
+      break;
+    case RANK_5:
+      printf(" 5");
+      break;
+    case RANK_6:
+      printf(" 6");
+      break;
+    case RANK_7:
+      printf(" 7");
+      break;
+    case RANK_8:
+      printf(" 8");
+      break;
+    case RANK_9:
+      printf(" 9");
+      break;
+    case RANK_10:
+      printf("10");
+      break;
+    case RANK_J:
+      printf(" J");
+      break;
+    case RANK_Q:
+      printf(" Q");
+      break;
+    case RANK_K:
+      printf(" K");
+      break;
+    case RANK_A:
+      printf(" A");
+      break;
+    case RANK_2:
+      printf(" 2");
+      break;
+    case RANK_AMOUNT:
+      assert(0);
+  }
+
+  switch (card.suit) {
+    case DIAMONDS:
+      printf("♦");
+      break;
+    case CLUBS:
+      printf("♣");
+      break;
+    case HEARTS:
+      printf("♥");
+      break;
+    case SPADES:
+      printf("♠");
+      break;
+    case SUIT_AMOUNT:
+      assert(0);
+  }
+}
+
+void printHandKind(HandKind kind) {
+  switch (kind) {
+    case NO_HAND:
+      printf("no hand");
+      break;
+    case HIGH_CARD:
+      printf("high card");
+      break;
+    case PAIR:
+      printf("pair");
+      break;
+    case THREE_OF_A_KIND:
+      printf("three of a kind");
+      break;
+    case STRAIGHT:
+      printf("straight");
+      break;
+    case FLUSH:
+      printf("flush");
+      break;
+    case FULL_HOUSE:
+      printf("full house");
+      break;
+    case FOUR_OF_A_KIND:
+      printf("four of a kind");
+      break;
+    case STRAIGHT_FLUSH:
+      printf("straight flush");
+      break;
+  }
 }
 
 void printPlayerCards(Player player,
