@@ -31,6 +31,18 @@ typedef enum PACKED {
 
 typedef enum PACKED { DIAMONDS, CLUBS, HEARTS, SPADES, SUIT_AMOUNT } CardSuit;
 
+typedef enum PACKED {
+  NO_HAND,
+  HIGH_CARD,
+  PAIR,
+  THREE_OF_A_KIND,
+  STRAIGHT,
+  FLUSH,
+  FULL_HOUSE,
+  FOUR_OF_A_KIND,
+  STRAIGHT_FLUSH,
+} HandKind;
+
 typedef struct {
   CardRank rank;
   CardSuit suit;
@@ -61,18 +73,6 @@ typedef struct {
   Card items[MAX_HAND_SIZE];
   uint8_t count;
 } PlayedCardHand;
-
-typedef enum {
-  NO_HAND,
-  HIGH_CARD,
-  PAIR,
-  THREE_OF_A_KIND,
-  STRAIGHT,
-  FLUSH,
-  FULL_HOUSE,
-  FOUR_OF_A_KIND,
-  STRAIGHT_FLUSH,
-} HandKind;
 
 GameContext generateGame(uint8_t playerCount);
 
