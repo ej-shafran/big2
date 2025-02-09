@@ -101,12 +101,18 @@ void printHandKind(HandKind kind) {
 
 GameContext generateGame(uint8_t playerCount) {
   GameContext gameContext = {
-      .players = {{{{0}}}},
+      .players =
+          {
+              .items = {0},
+              .count = playerCount,
+          },
       .currentPlayerIndex = 0,
-      .playerCount = playerCount,
   };
   for (int i = 0; i < playerCount; i++) {
-    gameContext.players[i] = (CardArray){.cardCount = 0, .cards = {{0}}};
+    Player player = {
+        .hand = (CardArray){.count = 0, .items = {{0}}},
+    };
+    gameContext.players.items[i] = player;
   }
 
   // Create the standard deck of cards
@@ -130,80 +136,81 @@ GameContext generateGame(uint8_t playerCount) {
       deck[cardIndex] = deck[count - 1];
       count -= 1;
 
-      gameContext.players[player].cards[gameContext.players[player].cardCount] =
-          card;
-      gameContext.players[player].cardCount++;
+      gameContext.players.items[player]
+          .hand.items[gameContext.players.items[player].hand.count++] = card;
     }
   }
 
   return gameContext;
 }
 
-bool areAllCardsSame(CardHand hand) {
-  Card first = hand.cards[0];
-  for (int i = 1; i < hand.cardCount; i++) {
-    if (hand.cards[i].rank != first.rank)
+bool areAllCardsSame(PlayedCardHand hand) {
+  Card first = hand.items[0];
+  for (int i = 1; i < hand.count; i++) {
+    if (hand.items[i].rank != first.rank)
       return false;
   }
   return true;
 }
 
-bool isFlush(CardHand hand) {
-  CardSuit firstSuit = hand.cards[0].suit;
-  for (int i = 1; i < hand.cardCount; i++) {
-    if (hand.cards[i].suit != firstSuit)
+bool isFlush(PlayedCardHand hand) {
+  CardSuit firstSuit = hand.items[0].suit;
+  for (int i = 1; i < hand.count; i++) {
+    if (hand.items[i].suit != firstSuit)
       return false;
   }
   return true;
 }
 
-bool isStraight(CardHand hand) {
-  CardRank lastRank = hand.cards[0].rank;
-  for (int i = 1; i < hand.cardCount; i++) {
-    if (((hand.cards[i].rank - lastRank) % RANK_AMOUNT) != 1)
+bool isStraight(PlayedCardHand hand) {
+  CardRank lastRank = hand.items[0].rank;
+  for (int i = 1; i < hand.count; i++) {
+    if (((hand.items[i].rank - lastRank) % RANK_AMOUNT) != 1)
       return false;
     lastRank += 1;
   }
   return true;
 }
 
-bool isFullHouse(CardHand hand) {
-  CardRank first = hand.cards[0].rank;
-  CardRank last = hand.cards[4].rank;
+bool isFullHouse(PlayedCardHand hand) {
+  CardRank first = hand.items[0].rank;
+  CardRank last = hand.items[4].rank;
 
-  return (first == hand.cards[1].rank && last == hand.cards[3].rank &&
-          (first == hand.cards[2].rank || last == hand.cards[2].rank));
+  return (first == hand.items[1].rank && last == hand.items[3].rank &&
+          (first == hand.items[2].rank || last == hand.items[2].rank));
 }
 
-bool isFourOfAKind(CardHand hand) {
-  CardRank first = hand.cards[0].rank;
-  CardRank last = hand.cards[4].rank;
-  CardRank rank = hand.cards[1].rank == first ? first : last;
-  for (int i = 1; i < hand.cardCount - 1; i++) {
-    if (hand.cards[i].rank != rank)
+bool isFourOfAKind(PlayedCardHand hand) {
+  CardRank first = hand.items[0].rank;
+  CardRank last = hand.items[4].rank;
+  CardRank rank = hand.items[1].rank == first ? first : last;
+  for (int i = 1; i < hand.count - 1; i++) {
+    if (hand.items[i].rank != rank)
       return false;
   }
   return true;
 }
 
-uint8_t quicksortHandPartition(CardHand* hand, uint8_t low, uint8_t high) {
-  Card pivot = hand->cards[high];
+uint8_t quicksortHandPartition(PlayedCardHand* hand,
+                               uint8_t low,
+                               uint8_t high) {
+  Card pivot = hand->items[high];
   uint8_t i = low;
   for (uint8_t j = low; j < high; j++) {
-    if (hand->cards[j].rank <= pivot.rank) {
-      Card temp = hand->cards[i];
-      hand->cards[i] = hand->cards[j];
-      hand->cards[j] = temp;
+    if (hand->items[j].rank <= pivot.rank) {
+      Card temp = hand->items[i];
+      hand->items[i] = hand->items[j];
+      hand->items[j] = temp;
       i += 1;
     }
   }
-  Card temp = hand->cards[i];
-  hand->cards[i] = hand->cards[high];
-  hand->cards[high] = temp;
+  Card temp = hand->items[i];
+  hand->items[i] = hand->items[high];
+  hand->items[high] = temp;
   return i;
 }
 
-void quicksortHand(CardHand* hand, uint8_t low, uint8_t high) {
+void quicksortHand(PlayedCardHand* hand, uint8_t low, uint8_t high) {
   if (low >= high)
     return;
 
@@ -212,10 +219,10 @@ void quicksortHand(CardHand* hand, uint8_t low, uint8_t high) {
   quicksortHand(hand, partitionIndex + 1, high);
 }
 
-HandKind handKind(CardHand hand) {
-  quicksortHand(&hand, 0, hand.cardCount - 1);
+HandKind handKind(PlayedCardHand hand) {
+  quicksortHand(&hand, 0, hand.count - 1);
 
-  switch (hand.cardCount) {
+  switch (hand.count) {
     case 1:
       return HIGH_CARD;
     case 2:

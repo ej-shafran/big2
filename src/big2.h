@@ -10,6 +10,7 @@
 #define MAX_PLAYERS 4
 #define MIN_PLAYERS 2
 #define MAX_HAND_SIZE 5
+#define MAX_SELECTED_CARDS (CARD_AMOUNT / MIN_PLAYERS)
 
 typedef enum PACKED {
   RANK_3,
@@ -35,23 +36,31 @@ typedef struct {
   CardSuit suit;
 } Card;
 
-typedef Card MaxSelectedCards[CARD_AMOUNT / MIN_PLAYERS];
+typedef Card DeckOfCards[CARD_AMOUNT];
 
 typedef struct {
-  MaxSelectedCards cards;
-  uint8_t cardCount;
+  Card items[MAX_SELECTED_CARDS];
+  uint8_t count;
 } CardArray;
 
 typedef struct {
-  CardArray players[MAX_PLAYERS];
-  uint8_t playerCount;
+  CardArray hand;
+} Player;
+
+typedef struct {
+  Player items[MAX_PLAYERS];
+  uint8_t count;
+} PlayerArray;
+
+typedef struct {
+  PlayerArray players;
   uint8_t currentPlayerIndex;
 } GameContext;
 
 typedef struct {
-  Card cards[MAX_HAND_SIZE];
-  uint8_t cardCount;
-} CardHand;
+  Card items[MAX_HAND_SIZE];
+  uint8_t count;
+} PlayedCardHand;
 
 typedef enum {
   NO_HAND,
@@ -71,6 +80,6 @@ void printCard(Card card);
 
 void printHandKind(HandKind kind);
 
-HandKind handKind(CardHand hand);
+HandKind handKind(PlayedCardHand hand);
 
 #endif  // BIG2_H_

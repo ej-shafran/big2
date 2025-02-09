@@ -24,10 +24,11 @@ const char* shiftArg(int* argc, const char*** argv) {
   return arg;
 }
 
-void printPlayerCards(CardArray player,
+void printPlayerCards(Player player,
                       uint8_t selectedCardIndexes[CARD_AMOUNT / MIN_PLAYERS],
                       uint8_t selectedCardCount) {
-  for (int cardIndex = 0; cardIndex < player.cardCount; cardIndex++) {
+  uint8_t cardCount = player.hand.count;
+  for (int cardIndex = 0; cardIndex < cardCount; cardIndex++) {
     printf("   ");
     bool isSelected = false;
     for (int i = 0; i < selectedCardCount; i++) {
@@ -41,14 +42,14 @@ void printPlayerCards(CardArray player,
     }
     printf("%02d", cardIndex + 1);
     printf("\033[0m");
-    if (cardIndex != player.cardCount - 1)
+    if (cardIndex != cardCount - 1)
       printf(" ");
   }
   printf("\n");
-  for (int cardIndex = 0; cardIndex < player.cardCount; cardIndex++) {
+  for (int cardIndex = 0; cardIndex < cardCount; cardIndex++) {
     printf("  ");
-    printCard(player.cards[cardIndex]);
-    if (cardIndex != player.cardCount - 1)
+    printCard(player.hand.items[cardIndex]);
+    if (cardIndex != cardCount - 1)
       printf(" ");
   }
   printf("\n");
@@ -117,7 +118,7 @@ int main(int argc, const char** argv) {
   uint8_t selectedCardCount = 0;
 
   printf("It is player %d's turn\n", gameContext.currentPlayerIndex);
-  CardArray player = gameContext.players[gameContext.currentPlayerIndex];
+  Player player = gameContext.players.items[gameContext.currentPlayerIndex];
   printPlayerCards(player, selectedCardIndexes, selectedCardCount);
 
   char* line = NULL;
@@ -141,7 +142,7 @@ int main(int argc, const char** argv) {
       return EXIT_FAILURE;
     }
 
-    if (endPointer == line || playedCardNumber > player.cardCount) {
+    if (endPointer == line || playedCardNumber > player.hand.count) {
       fprintf(stderr, "invalid card index string\n");
       return EXIT_FAILURE;
     }
@@ -165,9 +166,9 @@ int main(int argc, const char** argv) {
     printPlayerCards(player, selectedCardIndexes, selectedCardCount);
     if (selectedCardCount > 5 || selectedCardCount == 0)
       continue;
-    CardHand hand = {.cardCount = selectedCardCount, .cards = {0}};
+    PlayedCardHand hand = {.count = selectedCardCount, .items = {0}};
     for (int i = 0; i < selectedCardCount; i++) {
-      hand.cards[i] = player.cards[selectedCardIndexes[i]];
+      hand.items[i] = player.hand.items[selectedCardIndexes[i]];
     }
     printf("Hand: ");
     printHandKind(handKind(hand));
