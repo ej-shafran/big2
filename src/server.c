@@ -227,8 +227,32 @@ int main(int argc, const char** argv) {
       return EXIT_FAILURE;
     }
 
-    if (strcmp(line, "done\n") == 0)
+    if (strcmp(line, "quit\n") == 0)
       break;
+
+    if (strcmp(line, "play\n") == 0) {
+      PlayedCardHand hand = {.count = selectedCardCount, .items = {0}};
+      for (int i = 0; i < selectedCardCount; i++) {
+        hand.items[i] = player.hand.items[selectedCardIndexes[i]];
+      }
+
+      HandKind kind = handKind(hand);
+      if (kind == NO_HAND) {
+        fprintf(stderr, "cannot play invalid hand\n");
+        continue;
+      }
+
+      if (hand.count != gameContext.playedHandSize &&
+          gameContext.playedHandSize != 0) {
+        fprintf(stderr, "must play a hand with %d cards\n",
+                gameContext.playedHandSize);
+        continue;
+      }
+      selectedCardCount = 0;
+      gameContext.playedHandSize = hand.count;
+      printf("TODO: play hand\n");
+      continue;
+    }
 
     char* endPointer;
     errno = 0;

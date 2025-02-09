@@ -67,6 +67,7 @@ typedef struct {
 typedef struct {
   PlayerArray players;
   uint8_t currentPlayerIndex;
+  uint8_t playedHandSize;
 } GameContext;
 
 typedef struct {

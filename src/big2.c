@@ -5,14 +5,13 @@
 #include "utils/pcg_basic.h"
 
 GameContext generateGame(uint8_t playerCount) {
-  GameContext gameContext = {
-      .players =
-          {
-              .items = {0},
-              .count = playerCount,
-          },
-      .currentPlayerIndex = 0,
-  };
+  GameContext gameContext = {.players =
+                                 {
+                                     .items = {0},
+                                     .count = playerCount,
+                                 },
+                             .currentPlayerIndex = 0,
+                             .playedHandSize = 0};
   for (int i = 0; i < playerCount; i++) {
     Player player = {
         .hand = (CardArray){.count = 0, .items = {{0}}},
@@ -124,9 +123,11 @@ void quicksortHand(PlayedCardHand* hand, uint8_t low, uint8_t high) {
 }
 
 HandKind handKind(PlayedCardHand hand) {
-  quicksortHand(&hand, 0, hand.count - 1);
+  quicksortHand(&hand, 0, hand.count == 0 ? 0 : hand.count - 1);
 
   switch (hand.count) {
+    case 0:
+      return NO_HAND;
     case 1:
       return HIGH_CARD;
     case 2:
