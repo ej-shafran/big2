@@ -75,6 +75,11 @@ typedef struct {
   uint8_t count;
 } PlayedCardHand;
 
+typedef struct {
+  uint8_t items[MAX_HAND_SIZE];
+  uint8_t count;
+} CardIndexArray;
+
 GameContext generateGame(uint8_t playerCount);
 
 HandKind handKind(PlayedCardHand hand);

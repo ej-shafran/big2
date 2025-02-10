@@ -120,15 +120,13 @@ void printHandKind(HandKind kind) {
   }
 }
 
-void printPlayerCards(Player player,
-                      uint8_t selectedCardIndexes[CARD_AMOUNT / MIN_PLAYERS],
-                      uint8_t selectedCardCount) {
+void printPlayerCards(Player player, CardIndexArray selectedIndexes) {
   uint8_t cardCount = player.hand.count;
   for (int cardIndex = 0; cardIndex < cardCount; cardIndex++) {
     printf("   ");
     bool isSelected = false;
-    for (int i = 0; i < selectedCardCount; i++) {
-      if (selectedCardIndexes[i] == cardIndex) {
+    for (int i = 0; i < selectedIndexes.count; i++) {
+      if (selectedIndexes.items[i] == cardIndex) {
         isSelected = true;
         break;
       }
@@ -210,12 +208,11 @@ int main(int argc, const char** argv) {
 
   GameContext gameContext = generateGame(playerCount);
 
-  uint8_t selectedCardIndexes[CARD_AMOUNT / 2] = {0};
-  uint8_t selectedCardCount = 0;
+  CardIndexArray selectedIndexes = {.items = {0}, .count = 0};
 
   printf("It is player %d's turn\n", gameContext.currentPlayerIndex);
   Player player = gameContext.players.items[gameContext.currentPlayerIndex];
-  printPlayerCards(player, selectedCardIndexes, selectedCardCount);
+  printPlayerCards(player, selectedIndexes);
 
   char* line = NULL;
   do {
@@ -231,9 +228,9 @@ int main(int argc, const char** argv) {
       break;
 
     if (strcmp(line, "play\n") == 0) {
-      PlayedCardHand hand = {.count = selectedCardCount, .items = {0}};
-      for (int i = 0; i < selectedCardCount; i++) {
-        hand.items[i] = player.hand.items[selectedCardIndexes[i]];
+      PlayedCardHand hand = {.count = selectedIndexes.count, .items = {0}};
+      for (int i = 0; i < selectedIndexes.count; i++) {
+        hand.items[i] = player.hand.items[selectedIndexes.items[i]];
       }
 
       HandKind kind = handKind(hand);
@@ -248,7 +245,7 @@ int main(int argc, const char** argv) {
                 gameContext.playedHandSize);
         continue;
       }
-      selectedCardCount = 0;
+      selectedIndexes.count = 0;
       gameContext.playedHandSize = hand.count;
       printf("TODO: play hand\n");
       continue;
@@ -268,27 +265,27 @@ int main(int argc, const char** argv) {
     }
 
     ssize_t alreadySelectedIndex = -1;
-    for (int i = 0; i < selectedCardCount; i++) {
-      if (selectedCardIndexes[i] == playedCardNumber - 1) {
+    for (int i = 0; i < selectedIndexes.count; i++) {
+      if (selectedIndexes.items[i] == playedCardNumber - 1) {
         alreadySelectedIndex = i;
         break;
       }
     }
     if (alreadySelectedIndex != -1) {
-      selectedCardIndexes[alreadySelectedIndex] =
-          selectedCardIndexes[--selectedCardCount];
-    } else if (selectedCardCount < 5) {
-      selectedCardIndexes[selectedCardCount++] = playedCardNumber - 1;
+      selectedIndexes.items[alreadySelectedIndex] =
+          selectedIndexes.items[--selectedIndexes.count];
+    } else if (selectedIndexes.count < 5) {
+      selectedIndexes.items[selectedIndexes.count++] = playedCardNumber - 1;
     } else {
       printf("cannot select more than 5 cards\n");
     }
 
-    printPlayerCards(player, selectedCardIndexes, selectedCardCount);
-    if (selectedCardCount > 5 || selectedCardCount == 0)
+    printPlayerCards(player, selectedIndexes);
+    if (selectedIndexes.count > 5 || selectedIndexes.count == 0)
       continue;
-    PlayedCardHand hand = {.count = selectedCardCount, .items = {0}};
-    for (int i = 0; i < selectedCardCount; i++) {
-      hand.items[i] = player.hand.items[selectedCardIndexes[i]];
+    PlayedCardHand hand = {.count = selectedIndexes.count, .items = {0}};
+    for (int i = 0; i < selectedIndexes.count; i++) {
+      hand.items[i] = player.hand.items[selectedIndexes.items[i]];
     }
     printf("Hand: ");
     printHandKind(handKind(hand));
