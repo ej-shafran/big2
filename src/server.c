@@ -210,7 +210,7 @@ int main(int argc, const char** argv) {
 
   CardIndexArray selectedIndexes = {.items = {0}, .count = 0};
 
-  printf("It is player %d's turn\n", gameContext.currentPlayerIndex);
+  printf("It is player %d's turn\n", gameContext.currentPlayerIndex + 1);
   Player player = gameContext.players.items[gameContext.currentPlayerIndex];
   printPlayerCards(player, selectedIndexes);
 
