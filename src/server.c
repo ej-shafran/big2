@@ -228,10 +228,7 @@ int main(int argc, const char** argv) {
       break;
 
     if (strcmp(line, "play\n") == 0) {
-      PlayedCardHand hand = {.count = selectedIndexes.count, .items = {0}};
-      for (int i = 0; i < selectedIndexes.count; i++) {
-        hand.items[i] = player.hand.items[selectedIndexes.items[i]];
-      }
+      PlayedCardHand hand = getPlayerHand(gameContext, selectedIndexes);
 
       HandKind kind = handKind(hand);
       if (kind == NO_HAND) {
@@ -283,10 +280,7 @@ int main(int argc, const char** argv) {
     printPlayerCards(player, selectedIndexes);
     if (selectedIndexes.count > 5 || selectedIndexes.count == 0)
       continue;
-    PlayedCardHand hand = {.count = selectedIndexes.count, .items = {0}};
-    for (int i = 0; i < selectedIndexes.count; i++) {
-      hand.items[i] = player.hand.items[selectedIndexes.items[i]];
-    }
+    PlayedCardHand hand = getPlayerHand(gameContext, selectedIndexes);
     printf("Hand: ");
     printHandKind(handKind(hand));
     printf("\n");

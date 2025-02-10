@@ -82,6 +82,9 @@ typedef struct {
 
 GameContext generateGame(uint8_t playerCount);
 
+PlayedCardHand getPlayerHand(GameContext gameContext,
+                             CardIndexArray selectedIndexes);
+
 HandKind handKind(PlayedCardHand hand);
 
 #endif  // BIG2_H_

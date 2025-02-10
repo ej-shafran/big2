@@ -122,6 +122,18 @@ void quicksortHand(PlayedCardHand* hand, uint8_t low, uint8_t high) {
   quicksortHand(hand, partitionIndex + 1, high);
 }
 
+PlayedCardHand getPlayerHand(GameContext gameContext,
+                             CardIndexArray selectedIndexes) {
+  uint8_t indexCount = selectedIndexes.count;
+  PlayedCardHand hand = {.count = indexCount, .items = {0}};
+  Player currentPlayer =
+      gameContext.players.items[gameContext.currentPlayerIndex];
+  for (uint8_t i = 0; i < indexCount; i++) {
+    hand.items[i] = currentPlayer.hand.items[selectedIndexes.items[i]];
+  }
+  return hand;
+}
+
 HandKind handKind(PlayedCardHand hand) {
   quicksortHand(&hand, 0, hand.count == 0 ? 0 : hand.count - 1);
 
