@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "utils/arena.h"
+#include "utils/array.h"
 
 #define PACKED __attribute__((__packed__))
 
@@ -41,50 +43,40 @@ typedef enum PACKED {
   FULL_HOUSE,
   FOUR_OF_A_KIND,
   STRAIGHT_FLUSH,
+  HAND_KIND_AMOUNT,
 } HandKind;
 
 typedef struct {
   CardRank rank;
   CardSuit suit;
 } Card;
-
-typedef Card DeckOfCards[CARD_AMOUNT];
-
-typedef struct {
-  Card items[MAX_SELECTED_CARDS];
-  uint8_t count;
-} CardArray;
+bool Card_Eq(Card a, Card b);
+bool Card_EqRank(Card a, Card b);
+bool Card_GtRank(Card a, Card b);
+bool Card_EqSuit(Card a, Card b);
+bool Card_GtSuit(Card a, Card b);
+ARRAY__DECLARE(Card, CardArray)
 
 typedef struct {
   CardArray hand;
 } Player;
+ARRAY__DECLARE(Player, PlayerArray)
 
-typedef struct {
-  Player items[MAX_PLAYERS];
-  uint8_t count;
-} PlayerArray;
+bool CardIndex_Eq(int32_t a, int32_t b);
+ARRAY__DECLARE(int32_t, CardIndexArray);
 
 typedef struct {
   PlayerArray players;
-  uint8_t currentPlayerIndex;
-  uint8_t playedHandSize;
+  CardArray selectedCards;
+  CardIndexArray selectedCardIndexes;
+  const char* seedString;
+  int32_t seedStringLength;
+  int32_t currentPlayerIndex;
+  int32_t playedHandSize;
+  HandKind selectedHandKind;
 } GameContext;
 
-typedef struct {
-  Card items[MAX_HAND_SIZE];
-  uint8_t count;
-} PlayedCardHand;
-
-typedef struct {
-  uint8_t items[MAX_HAND_SIZE];
-  uint8_t count;
-} CardIndexArray;
-
-GameContext generateGame(uint8_t playerCount);
-
-PlayedCardHand getPlayerHand(GameContext gameContext,
-                             CardIndexArray selectedIndexes);
-
-HandKind handKind(PlayedCardHand hand);
+GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena);
+HandKind handKind(CardArray* hand);
 
 #endif  // BIG2_H_

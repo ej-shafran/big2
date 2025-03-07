@@ -1,0 +1,167 @@
+#ifndef ARRAY_H_
+#define ARRAY_H_
+
+#include <assert.h>
+#include <stdint.h>
+#include "arena.h"
+
+#if __STDC_VERSION__ >= 202311L
+#define CLAY__DEFAULT_STRUCT \
+  {}
+#else
+#define DEFAULT_STRUCT {0}
+#endif
+
+#define ARRAY_BOUNDS_CHECK(index, upper) \
+  (index < upper && index >= 0)          \
+      ? true                             \
+      : (assert(false && "index out of bounds"), false)
+
+#define ARRAY__DECLARE(typeName, arrayName)                                   \
+  typedef struct {                                                            \
+    int32_t capacity;                                                         \
+    int32_t length;                                                           \
+    typeName* internalArray;                                                  \
+  } arrayName;                                                                \
+                                                                              \
+  typedef struct {                                                            \
+    int32_t length;                                                           \
+    typeName* internalArray;                                                  \
+  } arrayName##Slice;                                                         \
+                                                                              \
+  arrayName arrayName##_ArenaAllocate(int32_t capacity, Arena* arena);        \
+  void arrayName##_Clear(arrayName* array);                                   \
+  typeName* arrayName##_Get(arrayName* array, int32_t index);                 \
+  typeName arrayName##_GetValue(arrayName* array, int32_t index);             \
+  typeName* arrayName##_Add(arrayName* array, typeName item);                 \
+  typeName* arrayName##Slice_Get(arrayName##Slice* slice, int32_t index);     \
+  typeName arrayName##Slice_GetValue(arrayName##Slice* slice, int32_t index); \
+  typeName arrayName##_Remove(arrayName* array, int32_t index);               \
+  typeName arrayName##_RemoveSwapback(arrayName* array, int32_t index);       \
+  void arrayName##_Set(arrayName* array, int32_t index, typeName value);      \
+  int32_t arrayName##_IndexOf(arrayName* array, typeName value,               \
+                              bool (*eqFunction)(typeName a, typeName b));    \
+  void arrayName##_Quicksort(arrayName* array,                                \
+                             bool (*gtFunction)(typeName a, typeName b));
+
+#define ARRAY__DEFINE(typeName, arrayName)                                     \
+  typeName typeName##_ARRAY_DEFAULT = DEFAULT_STRUCT;                          \
+                                                                               \
+  arrayName arrayName##_ArenaAllocate(int32_t capacity, Arena* arena) {        \
+    return (arrayName){.capacity = capacity,                                   \
+                       .length = 0,                                            \
+                       .internalArray = (typeName*)Arena_Allocate(             \
+                           capacity * sizeof(typeName), arena)};               \
+  }                                                                            \
+                                                                               \
+  void arrayName##_Clear(arrayName* array) {                                   \
+    array->length = 0;                                                         \
+  }                                                                            \
+                                                                               \
+  typeName* arrayName##_Get(arrayName* array, int32_t index) {                 \
+    return (ARRAY_BOUNDS_CHECK(index, array->length))                          \
+               ? &array->internalArray[index]                                  \
+               : &typeName##_ARRAY_DEFAULT;                                    \
+  }                                                                            \
+                                                                               \
+  typeName arrayName##_GetValue(arrayName* array, int32_t index) {             \
+    return (ARRAY_BOUNDS_CHECK(index, array->length))                          \
+               ? array->internalArray[index]                                   \
+               : typeName##_ARRAY_DEFAULT;                                     \
+  }                                                                            \
+                                                                               \
+  typeName* arrayName##_Add(arrayName* array, typeName item) {                 \
+    if (ARRAY_BOUNDS_CHECK(array->length + 1, array->capacity + 1)) {          \
+      int32_t index = array->length++;                                         \
+      array->internalArray[index] = item;                                      \
+      return &array->internalArray[index];                                     \
+    }                                                                          \
+    return &typeName##_ARRAY_DEFAULT;                                          \
+  }                                                                            \
+                                                                               \
+  typeName* arrayName##Slice_Get(arrayName##Slice* slice, int32_t index) {     \
+    return (ARRAY_BOUNDS_CHECK(index, slice->length))                          \
+               ? &slice->internalArray[index]                                  \
+               : &typeName##_ARRAY_DEFAULT;                                    \
+  }                                                                            \
+                                                                               \
+  typeName arrayName##Slice_GetValue(arrayName##Slice* slice, int32_t index) { \
+    return (ARRAY_BOUNDS_CHECK(index, slice->length))                          \
+               ? slice->internalArray[index]                                   \
+               : typeName##_ARRAY_DEFAULT;                                     \
+  }                                                                            \
+                                                                               \
+  typeName arrayName##_Remove(arrayName* array, int32_t index) {               \
+    if (ARRAY_BOUNDS_CHECK(index, array->length)) {                            \
+      int32_t arrayLength = array->length--;                                   \
+      typeName removed = array->internalArray[index];                          \
+      for (int32_t i = index; i < arrayLength; i++) {                          \
+        array->internalArray[i] = array->internalArray[i + 1];                 \
+      }                                                                        \
+      return removed;                                                          \
+    }                                                                          \
+    return typeName##_ARRAY_DEFAULT;                                           \
+  }                                                                            \
+                                                                               \
+  typeName arrayName##_RemoveSwapback(arrayName* array, int32_t index) {       \
+    if (ARRAY_BOUNDS_CHECK(index, array->length)) {                            \
+      typeName removed = array->internalArray[index];                          \
+      array->internalArray[index] = array->internalArray[--array->length];     \
+      return removed;                                                          \
+    }                                                                          \
+    return typeName##_ARRAY_DEFAULT;                                           \
+  }                                                                            \
+                                                                               \
+  void arrayName##_Set(arrayName* array, int32_t index, typeName value) {      \
+    if (ARRAY_BOUNDS_CHECK(index, array->capacity)) {                          \
+      array->internalArray[index] = value;                                     \
+      array->length = index < array->length ? array->length : index + 1;       \
+    }                                                                          \
+  }                                                                            \
+                                                                               \
+  int32_t arrayName##_IndexOf(arrayName* array, typeName value,                \
+                              bool (*eqFunction)(typeName a, typeName b)) {    \
+    for (int32_t i = 0; i < array->length; i++) {                              \
+      if (eqFunction(array->internalArray[i], value))                          \
+        return i;                                                              \
+    }                                                                          \
+    return -1;                                                                 \
+  }                                                                            \
+                                                                               \
+  int32_t arrayName##_QuicksortPartition(                                      \
+      arrayName* array, int32_t low, int32_t high,                             \
+      bool (*gtFunction)(typeName a, typeName b)) {                            \
+    typeName pivot = arrayName##_GetValue(array, high);                        \
+    int32_t i = low;                                                           \
+    for (int32_t j = low; j < high; j++) {                                     \
+      typeName jValue = arrayName##_GetValue(array, j);                        \
+      if (!gtFunction(jValue, pivot)) {                                        \
+        typeName iValue = arrayName##_GetValue(array, i);                      \
+        arrayName##_Set(array, i, jValue);                                     \
+        arrayName##_Set(array, j, iValue);                                     \
+        i += 1;                                                                \
+      }                                                                        \
+    }                                                                          \
+    typeName iValue = arrayName##_GetValue(array, i);                          \
+    arrayName##_Set(array, i, arrayName##_GetValue(array, high));              \
+    arrayName##_Set(array, high, iValue);                                      \
+    return i;                                                                  \
+  }                                                                            \
+                                                                               \
+  void arrayName##_QuicksortImpl(arrayName* array, int32_t low, int32_t high,  \
+                                 bool (*gtFunction)(typeName a, typeName b)) { \
+    if (low >= high)                                                           \
+      return;                                                                  \
+                                                                               \
+    int32_t partitionIndex =                                                   \
+        arrayName##_QuicksortPartition(array, low, high, gtFunction);          \
+    arrayName##_QuicksortImpl(array, low, partitionIndex - 1, gtFunction);     \
+    arrayName##_QuicksortImpl(array, partitionIndex + 1, high, gtFunction);    \
+  }                                                                            \
+                                                                               \
+  void arrayName##_Quicksort(arrayName* array,                                 \
+                             bool (*gtFunction)(typeName a, typeName b)) {     \
+    return arrayName##_QuicksortImpl(array, 0, array->length - 1, gtFunction); \
+  }
+
+#endif  // ARRAY_H_

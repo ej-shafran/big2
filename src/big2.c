@@ -2,142 +2,137 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "utils/array.h"
 #include "utils/pcg_basic.h"
 
-GameContext generateGame(uint8_t playerCount) {
-  GameContext gameContext = {.players =
-                                 {
-                                     .items = {0},
-                                     .count = playerCount,
-                                 },
-                             .currentPlayerIndex = 0,
-                             .playedHandSize = 0};
-  for (int i = 0; i < playerCount; i++) {
-    Player player = {
-        .hand = (CardArray){.count = 0, .items = {{0}}},
-    };
-    gameContext.players.items[i] = player;
+ARRAY__DEFINE(Player, PlayerArray)
+ARRAY__DEFINE(Card, CardArray)
+ARRAY__DEFINE(int32_t, CardIndexArray)
+
+bool Card_Eq(Card a, Card b) {
+  return Card_EqRank(a, b) && Card_EqSuit(a, b);
+}
+
+bool Card_EqRank(Card a, Card b) {
+  return a.rank == b.rank;
+}
+
+bool Card_GtRank(Card a, Card b) {
+  return a.rank > b.rank;
+}
+
+bool Card_EqSuit(Card a, Card b) {
+  return a.suit == b.suit;
+}
+
+bool Card_GtSuit(Card a, Card b) {
+  return a.suit > b.suit;
+}
+
+bool CardIndex_Eq(int32_t a, int32_t b) {
+  return a == b;
+};
+
+GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
+  char* seedString = Arena_Allocate(20 * sizeof(char), arena);
+  int32_t seedStringLength = sprintf(seedString, "%" PRIx64, seed);
+
+  GameContext gameContext = {
+      .players = PlayerArray_ArenaAllocate(playerCount, arena),
+      .selectedCardIndexes = CardIndexArray_ArenaAllocate(MAX_HAND_SIZE, arena),
+      .selectedCards = CardArray_ArenaAllocate(MAX_HAND_SIZE, arena),
+      .selectedHandKind = NO_HAND,
+      .seedString = seedString,
+      .seedStringLength = seedStringLength,
+      .currentPlayerIndex = 0,
+      .playedHandSize = 0};
+
+  int cardsPerPlayer = CARD_AMOUNT / playerCount;
+
+  for (int32_t i = 0; i < playerCount; i++) {
+    PlayerArray_Set(
+        &gameContext.players, i,
+        (Player){.hand = CardArray_ArenaAllocate(cardsPerPlayer, arena)});
   }
 
-  DeckOfCards deck = {0};
-  for (int rank = 0; rank < RANK_AMOUNT; rank++) {
-    for (int suit = 0; suit < SUIT_AMOUNT; suit++) {
-      Card card = {.rank = rank, .suit = suit};
-      int i = (RANK_AMOUNT * suit) + rank;
-      deck[i] = card;
+  Card deck[CARD_AMOUNT] = {0};
+  for (CardRank rank = 0; rank < RANK_AMOUNT; rank++) {
+    for (CardSuit suit = 0; suit < SUIT_AMOUNT; suit++) {
+      deck[(RANK_AMOUNT * suit) + rank] = (Card){rank, suit};
     }
   }
 
   // Deal random hands to players
-  int cardsPerPlayer = CARD_AMOUNT / playerCount;
   int count = CARD_AMOUNT;
-  for (int player = 0; player < playerCount; player++) {
+  for (int32_t playerIndex = 0; playerIndex < playerCount; playerIndex++) {
+    Player* player = PlayerArray_Get(&gameContext.players, playerIndex);
     for (int i = 0; i < cardsPerPlayer; i++) {
-      int cardIndex = pcg32Boundedrand(count);
+      uint32_t cardIndex = pcg32Boundedrand(count);
 
       Card card = deck[cardIndex];
       deck[cardIndex] = deck[count - 1];
       count -= 1;
 
-      gameContext.players.items[player]
-          .hand.items[gameContext.players.items[player].hand.count++] = card;
+      CardArray_Add(&player->hand, card);
     }
   }
 
   return gameContext;
 }
 
-bool areAllCardsSame(PlayedCardHand hand) {
-  Card first = hand.items[0];
-  for (int i = 1; i < hand.count; i++) {
-    if (hand.items[i].rank != first.rank)
+bool areAllCardsSame(CardArray* hand) {
+  Card first = CardArray_GetValue(hand, 0);
+  for (int i = 1; i < hand->length; i++) {
+    if (!Card_EqRank(CardArray_GetValue(hand, i), first))
       return false;
   }
   return true;
 }
 
-bool isFlush(PlayedCardHand hand) {
-  CardSuit firstSuit = hand.items[0].suit;
-  for (int i = 1; i < hand.count; i++) {
-    if (hand.items[i].suit != firstSuit)
+bool isFlush(CardArray* hand) {
+  Card first = CardArray_GetValue(hand, 0);
+  for (int i = 1; i < hand->length; i++) {
+    if (!Card_EqSuit(CardArray_GetValue(hand, i), first))
       return false;
   }
   return true;
 }
 
-bool isStraight(PlayedCardHand hand) {
-  CardRank lastRank = hand.items[0].rank;
-  for (int i = 1; i < hand.count; i++) {
-    if (((hand.items[i].rank - lastRank) % RANK_AMOUNT) != 1)
+bool isStraight(CardArray* hand) {
+  CardRank latestRank = CardArray_GetValue(hand, 0).rank;
+  for (int i = 1; i < hand->length; i++) {
+    if (((CardArray_GetValue(hand, i).rank - latestRank) % RANK_AMOUNT) != 1)
       return false;
-    lastRank += 1;
+    latestRank += 1;
   }
   return true;
 }
 
-bool isFullHouse(PlayedCardHand hand) {
-  CardRank first = hand.items[0].rank;
-  CardRank last = hand.items[4].rank;
+bool isFullHouse(CardArray* hand) {
+  Card first = CardArray_GetValue(hand, 0);
+  Card last = CardArray_GetValue(hand, 4);
 
-  return (first == hand.items[1].rank && last == hand.items[3].rank &&
-          (first == hand.items[2].rank || last == hand.items[2].rank));
+  return (Card_EqRank(CardArray_GetValue(hand, 1), first) &&
+          Card_EqRank(CardArray_GetValue(hand, 3), last) &&
+          (Card_EqRank(CardArray_GetValue(hand, 2), first) ||
+           Card_EqRank(CardArray_GetValue(hand, 2), last)));
 }
 
-bool isFourOfAKind(PlayedCardHand hand) {
-  CardRank first = hand.items[0].rank;
-  CardRank last = hand.items[4].rank;
-  CardRank rank = hand.items[1].rank == first ? first : last;
-  for (int i = 1; i < hand.count - 1; i++) {
-    if (hand.items[i].rank != rank)
+bool isFourOfAKind(CardArray* hand) {
+  Card first = CardArray_GetValue(hand, 0);
+  Card last = CardArray_GetValue(hand, 4);
+  Card rank = Card_EqRank(first, CardArray_GetValue(hand, 1)) ? first : last;
+  for (int i = 1; i < hand->length - 1; i++) {
+    if (!Card_EqRank(rank, CardArray_GetValue(hand, i)))
       return false;
   }
   return true;
 }
 
-uint8_t quicksortHandPartition(PlayedCardHand* hand,
-                               uint8_t low,
-                               uint8_t high) {
-  Card pivot = hand->items[high];
-  uint8_t i = low;
-  for (uint8_t j = low; j < high; j++) {
-    if (hand->items[j].rank <= pivot.rank) {
-      Card temp = hand->items[i];
-      hand->items[i] = hand->items[j];
-      hand->items[j] = temp;
-      i += 1;
-    }
-  }
-  Card temp = hand->items[i];
-  hand->items[i] = hand->items[high];
-  hand->items[high] = temp;
-  return i;
-}
+HandKind handKind(CardArray* hand) {
+  CardArray_Quicksort(hand, Card_GtRank);
 
-void quicksortHand(PlayedCardHand* hand, uint8_t low, uint8_t high) {
-  if (low >= high)
-    return;
-
-  uint8_t partitionIndex = quicksortHandPartition(hand, low, high);
-  quicksortHand(hand, low, partitionIndex == 0 ? 0 : partitionIndex - 1);
-  quicksortHand(hand, partitionIndex + 1, high);
-}
-
-PlayedCardHand getPlayerHand(GameContext gameContext,
-                             CardIndexArray selectedIndexes) {
-  uint8_t indexCount = selectedIndexes.count;
-  PlayedCardHand hand = {.count = indexCount, .items = {0}};
-  Player currentPlayer =
-      gameContext.players.items[gameContext.currentPlayerIndex];
-  for (uint8_t i = 0; i < indexCount; i++) {
-    hand.items[i] = currentPlayer.hand.items[selectedIndexes.items[i]];
-  }
-  return hand;
-}
-
-HandKind handKind(PlayedCardHand hand) {
-  quicksortHand(&hand, 0, hand.count == 0 ? 0 : hand.count - 1);
-
-  switch (hand.count) {
+  switch (hand->length) {
     case 0:
       return NO_HAND;
     case 1:
