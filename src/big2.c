@@ -13,6 +13,10 @@ bool Card_Eq(Card a, Card b) {
   return Card_EqRank(a, b) && Card_EqSuit(a, b);
 }
 
+bool Card_Gt(Card a, Card b) {
+  return ((a.suit * RANK_AMOUNT) + a.rank) > ((b.suit * RANK_AMOUNT) + b.rank);
+}
+
 bool Card_EqRank(Card a, Card b) {
   return a.rank == b.rank;
 }
@@ -33,6 +37,10 @@ bool CardIndex_Eq(int32_t a, int32_t b) {
   return a == b;
 };
 
+bool CardIndex_Gt(int32_t a, int32_t b) {
+  return a > b;
+};
+
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
   char* seedString = Arena_Allocate(20 * sizeof(char), arena);
   int32_t seedStringLength = sprintf(seedString, "%" PRIx64, seed);
@@ -40,7 +48,6 @@ GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
   GameContext gameContext = {
       .players = PlayerArray_ArenaAllocate(playerCount, arena),
       .selectedCardIndexes = CardIndexArray_ArenaAllocate(MAX_HAND_SIZE, arena),
-      .selectedCards = CardArray_ArenaAllocate(MAX_HAND_SIZE, arena),
       .selectedHandKind = NO_HAND,
       .seedString = seedString,
       .seedStringLength = seedStringLength,
@@ -73,87 +80,110 @@ GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
       deck[cardIndex] = deck[count - 1];
       count -= 1;
 
-      CardArray_Add(&player->hand, card);
+      CardArray_InsertSorted(&player->hand, card, Card_Gt);
     }
   }
 
   return gameContext;
 }
 
-bool areAllCardsSame(CardArray* hand) {
-  Card first = CardArray_GetValue(hand, 0);
-  for (int i = 1; i < hand->length; i++) {
-    if (!Card_EqRank(CardArray_GetValue(hand, i), first))
+bool areAllCardsSame(CardArray* hand, CardIndexArray* selectedIndexes) {
+  Card first =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
+  for (int i = 1; i < selectedIndexes->length; i++) {
+    if (!Card_EqRank(CardArray_GetValue(
+                         hand, CardIndexArray_GetValue(selectedIndexes, i)),
+                     first))
       return false;
   }
   return true;
 }
 
-bool isFlush(CardArray* hand) {
-  Card first = CardArray_GetValue(hand, 0);
-  for (int i = 1; i < hand->length; i++) {
-    if (!Card_EqSuit(CardArray_GetValue(hand, i), first))
+bool isFlush(CardArray* hand, CardIndexArray* selectedIndexes) {
+  Card first =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
+  for (int i = 1; i < selectedIndexes->length; i++) {
+    if (!Card_EqSuit(CardArray_GetValue(
+                         hand, CardIndexArray_GetValue(selectedIndexes, i)),
+                     first))
       return false;
   }
   return true;
 }
 
-bool isStraight(CardArray* hand) {
-  CardRank latestRank = CardArray_GetValue(hand, 0).rank;
-  for (int i = 1; i < hand->length; i++) {
-    if (((CardArray_GetValue(hand, i).rank - latestRank) % RANK_AMOUNT) != 1)
+// TODO: doesn't work because we no longer sort by rank
+bool isStraight(CardArray* hand, CardIndexArray* selectedIndexes) {
+  CardRank latestRank =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0))
+          .rank;
+  for (int i = 1; i < selectedIndexes->length; i++) {
+    if (((CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, i))
+              .rank -
+          latestRank) %
+         RANK_AMOUNT) != 1)
       return false;
     latestRank += 1;
   }
   return true;
 }
 
-bool isFullHouse(CardArray* hand) {
-  Card first = CardArray_GetValue(hand, 0);
-  Card last = CardArray_GetValue(hand, 4);
+// TODO: doesn't work because we no longer sort by rank
+bool isFullHouse(CardArray* hand, CardIndexArray* selectedIndexes) {
+  Card first =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
+  Card second =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 1));
+  Card third =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 2));
+  Card fourth =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 3));
+  Card last =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 4));
 
-  return (Card_EqRank(CardArray_GetValue(hand, 1), first) &&
-          Card_EqRank(CardArray_GetValue(hand, 3), last) &&
-          (Card_EqRank(CardArray_GetValue(hand, 2), first) ||
-           Card_EqRank(CardArray_GetValue(hand, 2), last)));
+  return (Card_EqRank(second, first) && Card_EqRank(fourth, last) &&
+          (Card_EqRank(third, first) || Card_EqRank(third, last)));
 }
 
-bool isFourOfAKind(CardArray* hand) {
-  Card first = CardArray_GetValue(hand, 0);
-  Card last = CardArray_GetValue(hand, 4);
-  Card rank = Card_EqRank(first, CardArray_GetValue(hand, 1)) ? first : last;
-  for (int i = 1; i < hand->length - 1; i++) {
-    if (!Card_EqRank(rank, CardArray_GetValue(hand, i)))
+// TODO: doesn't work because we no longer sort by rank
+bool isFourOfAKind(CardArray* hand, CardIndexArray* selectedIndexes) {
+  Card first =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
+  Card second =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 1));
+  Card last =
+      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 4));
+  Card rank = Card_EqRank(first, second) ? first : last;
+  for (int i = 1; i < selectedIndexes->length - 1; i++) {
+    if (!Card_EqRank(rank, CardArray_GetValue(hand, CardIndexArray_GetValue(
+                                                        selectedIndexes, i))))
       return false;
   }
   return true;
 }
 
-HandKind handKind(CardArray* hand) {
-  CardArray_Quicksort(hand, Card_GtRank);
-
-  switch (hand->length) {
+HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes) {
+  switch (selectedIndexes->length) {
     case 0:
       return NO_HAND;
     case 1:
       return HIGH_CARD;
     case 2:
-      return areAllCardsSame(hand) ? PAIR : NO_HAND;
+      return areAllCardsSame(hand, selectedIndexes) ? PAIR : NO_HAND;
     case 3:
-      return areAllCardsSame(hand) ? THREE_OF_A_KIND : NO_HAND;
+      return areAllCardsSame(hand, selectedIndexes) ? THREE_OF_A_KIND : NO_HAND;
     case 4:
       return NO_HAND;
     case 5: {
-      if (isFlush(hand))
-        return isStraight(hand) ? STRAIGHT_FLUSH : FLUSH;
+      if (isFlush(hand, selectedIndexes))
+        return isStraight(hand, selectedIndexes) ? STRAIGHT_FLUSH : FLUSH;
 
-      if (isStraight(hand))
+      if (isStraight(hand, selectedIndexes))
         return STRAIGHT;
 
-      if (isFullHouse(hand))
+      if (isFullHouse(hand, selectedIndexes))
         return FULL_HOUSE;
 
-      if (isFourOfAKind(hand))
+      if (isFourOfAKind(hand, selectedIndexes))
         return FOUR_OF_A_KIND;
 
       return NO_HAND;

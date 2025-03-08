@@ -63,11 +63,11 @@ typedef struct {
 ARRAY__DECLARE(Player, PlayerArray)
 
 bool CardIndex_Eq(int32_t a, int32_t b);
+bool CardIndex_Gt(int32_t a, int32_t b);
 ARRAY__DECLARE(int32_t, CardIndexArray);
 
 typedef struct {
   PlayerArray players;
-  CardArray selectedCards;
   CardIndexArray selectedCardIndexes;
   const char* seedString;
   int32_t seedStringLength;
@@ -77,6 +77,6 @@ typedef struct {
 } GameContext;
 
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena);
-HandKind handKind(CardArray* hand);
+HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes);
 
 #endif  // BIG2_H_

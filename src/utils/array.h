@@ -2,6 +2,7 @@
 #define ARRAY_H_
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include "arena.h"
 
@@ -41,6 +42,9 @@
   void arrayName##_Set(arrayName* array, int32_t index, typeName value);      \
   int32_t arrayName##_FindIndex(arrayName* array, typeName value,             \
                                 bool (*eqFunction)(typeName a, typeName b));  \
+  void arrayName##_Insert(arrayName* array, int32_t index, typeName value);   \
+  void arrayName##_InsertSorted(arrayName* array, typeName value,             \
+                                bool (*gtFunction)(typeName a, typeName b));  \
   void arrayName##_Quicksort(arrayName* array,                                \
                              bool (*gtFunction)(typeName a, typeName b));
 
@@ -126,6 +130,23 @@
         return i;                                                              \
     }                                                                          \
     return -1;                                                                 \
+  }                                                                            \
+                                                                               \
+  void arrayName##_Insert(arrayName* array, int32_t index, typeName value) {   \
+    if (index < 0) {                                                           \
+      index = array->length + 1 + index;                                       \
+    }                                                                          \
+    array->length += 1;                                                        \
+    for (int32_t i = array->length - 1; i > index - 1; i--) {                  \
+      array->internalArray[i + 1] = array->internalArray[i];                   \
+    }                                                                          \
+    array->internalArray[index] = value;                                       \
+  }                                                                            \
+                                                                               \
+  void arrayName##_InsertSorted(arrayName* array, typeName value,              \
+                                bool (*gtFunction)(typeName a, typeName b)) {  \
+    int32_t largerIndex = arrayName##_FindIndex(array, value, gtFunction);     \
+    arrayName##_Insert(array, largerIndex, value);                             \
   }                                                                            \
                                                                                \
   int32_t arrayName##_QuicksortPartition(                                      \

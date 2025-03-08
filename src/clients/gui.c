@@ -124,24 +124,22 @@ void handleCardHover(Clay_ElementId elementId,
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
     int32_t indexInSelectedCards = CardIndexArray_FindIndex(
         &gameContext.selectedCardIndexes, index, CardIndex_Eq);
-    Card card = CardArray_GetValue(&currentPlayer->hand, index);
     if (indexInSelectedCards == -1) {
       if (gameContext.selectedCardIndexes.length < MAX_HAND_SIZE) {
         // Add to array
         TraceLog(LOG_INFO, "selected card at index %d", index);
-        CardIndexArray_Add(&gameContext.selectedCardIndexes, index);
-        CardArray_Add(&gameContext.selectedCards, card);
-        gameContext.selectedHandKind = handKind(&gameContext.selectedCards);
+        CardIndexArray_InsertSorted(&gameContext.selectedCardIndexes, index,
+                                    CardIndex_Gt);
+        gameContext.selectedHandKind =
+            handKind(&currentPlayer->hand, &gameContext.selectedCardIndexes);
       }
     } else {
       // Remove from array
       TraceLog(LOG_INFO, "deselected card at index %d", index);
-      CardIndexArray_RemoveSwapback(&gameContext.selectedCardIndexes,
-                                    indexInSelectedCards);
-      CardArray_RemoveSwapback(
-          &gameContext.selectedCards,
-          CardArray_FindIndex(&gameContext.selectedCards, card, Card_Eq));
-      gameContext.selectedHandKind = handKind(&gameContext.selectedCards);
+      CardIndexArray_Remove(&gameContext.selectedCardIndexes,
+                            indexInSelectedCards);
+      gameContext.selectedHandKind =
+          handKind(&currentPlayer->hand, &gameContext.selectedCardIndexes);
     }
   }
 }
@@ -201,7 +199,6 @@ void renderSeed(void) {
 
 void clearSelectedCards(void) {
   CardIndexArray_Clear(&gameContext.selectedCardIndexes);
-  CardArray_Clear(&gameContext.selectedCards);
   gameContext.selectedHandKind = NO_HAND;
 }
 
@@ -235,9 +232,10 @@ void handlePlayButtonHover(Clay_ElementId elementId,
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     if (gameContext.selectedHandKind != NO_HAND &&
         (gameContext.playedHandSize == 0 ||
-         gameContext.playedHandSize == gameContext.selectedCards.length)) {
+         gameContext.playedHandSize ==
+             gameContext.selectedCardIndexes.length)) {
       TraceLog(LOG_INFO, "played hand");
-      gameContext.playedHandSize = gameContext.selectedCards.length;
+      gameContext.playedHandSize = gameContext.selectedCardIndexes.length;
       Player* currentPlayer =
           PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
       for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
