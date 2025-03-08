@@ -29,12 +29,16 @@ Texture2D SUIT_TO_ICON[SUIT_AMOUNT] = {};
 const Clay_Color BACKGROUND_COLOR = {0, 0, 0, 255};
 const Clay_Color CONTAINER_BACKGROUND_COLOR = {122, 122, 122, 255};
 const Clay_Color CARD_BACKGROUND_COLOR = {245, 245, 245, 255};
-const Clay_Color UI_TEXT_COLOR = {255, 255, 255, 255};
-const Clay_Color CARD_TEXT_COLOR = {15, 15, 15, 255};
-const Clay_Color BUTTON_TEXT_COLOR = {255, 255, 255, 255};
+const Clay_Color LIGHT_TEXT_COLOR = {255, 255, 255, 255};
+const Clay_Color DARK_TEXT_COLOR = {15, 15, 15, 255};
 const Clay_Color PRIMARY_COLOR = {102, 163, 255, 255};
+const Clay_Color PRIMARY_COLOR_HOVER = {92, 153, 245, 255};
 const Clay_Color SECONDARY_COLOR = {255, 102, 102, 255};
+const Clay_Color SECONDARY_COLOR_HOVER = {245, 92, 92, 255};
 const Clay_Color DARK_COLOR = {0, 0, 26, 255};
+const Clay_Color DARK_COLOR_HOVER = {10, 10, 36, 255};
+const Clay_Color LIGHT_COLOR = {245, 245, 245, 255};
+const Clay_Color LIGHT_COLOR_HOVER = {225, 225, 225, 255};
 
 // Fonts & Text
 const int FONT_ID_BODY_16 = 0;
@@ -42,16 +46,20 @@ const Clay_TextElementConfig UI_TEXT_CONFIG = {
     .fontId = FONT_ID_BODY_16,
     .fontSize = 40,
     .textAlignment = CLAY_TEXT_ALIGN_CENTER,
-    .textColor = UI_TEXT_COLOR};
+    .textColor = LIGHT_TEXT_COLOR};
 const Clay_TextElementConfig CARD_TEXT_CONFIG = {.fontId = FONT_ID_BODY_16,
                                                  .fontSize = 32,
-                                                 .textColor = CARD_TEXT_COLOR};
-const Clay_TextElementConfig BUTTON_TEXT_CONFIG = {
+                                                 .textColor = DARK_TEXT_COLOR};
+const Clay_TextElementConfig DARK_BUTTON_TEXT_CONFIG = {
     .fontId = FONT_ID_BODY_16,
     .fontSize = 40,
-    .textColor = BUTTON_TEXT_COLOR,
+    .textColor = LIGHT_TEXT_COLOR,
     .wrapMode = CLAY_TEXT_WRAP_WORDS};
-
+const Clay_TextElementConfig LIGHT_BUTTON_TEXT_CONFIG = {
+    .fontId = FONT_ID_BODY_16,
+    .fontSize = 40,
+    .textColor = DARK_TEXT_COLOR,
+    .wrapMode = CLAY_TEXT_WRAP_WORDS};
 // Layout
 //   Sizing
 const Clay_Sizing EXPAND_SIZING = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()};
@@ -66,6 +74,7 @@ const int SELECTED_CARD_HEIGHT = SELECTED_CARD_WIDTH * 14 / 9;
 const Clay_Sizing SELECTED_CARD_SIZING = {
     .width = CLAY_SIZING_FIXED(SELECTED_CARD_WIDTH),
     .height = CLAY_SIZING_FIXED(SELECTED_CARD_HEIGHT)};
+const Clay_Sizing BUTTON_SIZING = {.width = CLAY_SIZING_GROW()};
 //   Gap
 const int32_t CONTAINER_GAP = 32;
 const int32_t CARD_GAP = 10;
@@ -74,7 +83,9 @@ const int32_t BUTTON_GAP = 10;
 const Clay_ChildAlignment CHILD_ALIGNMENT_CENTER = {.x = CLAY_ALIGN_X_CENTER,
                                                     .y = CLAY_ALIGN_Y_CENTER};
 //   Padding
+const Clay_Padding WINDOW_PADDING = CLAY_PADDING_ALL(CONTAINER_GAP);
 const Clay_Padding CONTAINER_PADDING = CLAY_PADDING_ALL(10);
+const Clay_Padding BUTTON_PADDING = CLAY_PADDING_ALL(5);
 
 // Shapes
 const Clay_CornerRadius CONTAINER_CORNER_RADIUS = CLAY_CORNER_RADIUS(16);
@@ -151,28 +162,37 @@ void renderCard(Card card, int32_t index) {
   }
 }
 
+void handleCopySeedHover(Clay_ElementId elementId,
+                         Clay_PointerData pointerData,
+                         intptr_t userData) {
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    // NOTE: assumes `seedString` is nul-terminated
+    SetClipboardText(gameContext.seedString);
+  }
+}
+
 void renderSeed(void) {
   Clay_String seedString = {.chars = gameContext.seedString,
                             .length = gameContext.seedStringLength};
   CLAY({.layout = {.sizing = EXPAND_SIZING,
+                   .childGap = BUTTON_GAP,
                    .childAlignment = CHILD_ALIGNMENT_CENTER}}) {
-    CLAY_TEXT(CLAY_STRING("Seed: "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
-    CLAY_TEXT(seedString, CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+    CLAY() {
+      CLAY_TEXT(CLAY_STRING("Seed: "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+      CLAY_TEXT(seedString, CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+    }
+    CLAY({.id = CLAY_ID("CopySeedButton"),
+          .layout = {.childAlignment = CHILD_ALIGNMENT_CENTER,
+                     .padding = {10, 10, 5, 5}},
+          .cornerRadius = BUTTON_CORNER_RADIUS,
+          .backgroundColor = Clay_PointerOver(CLAY_ID("CopySeedButton"))
+                                 ? LIGHT_COLOR_HOVER
+                                 : LIGHT_COLOR}) {
+      Clay_OnHover(handleCopySeedHover, 0);
+      CLAY_TEXT(CLAY_STRING("Copy"),
+                CLAY_TEXT_CONFIG(LIGHT_BUTTON_TEXT_CONFIG));
+    }
   }
-}
-
-const Clay_Sizing sizingButton = {.width = CLAY_SIZING_GROW()};
-
-Clay_ElementDeclaration buttonConfig(Clay_Color color) {
-  return (Clay_ElementDeclaration){
-      .layout =
-          {
-              .sizing = sizingButton,
-              .childAlignment = CHILD_ALIGNMENT_CENTER,
-              .padding = CLAY_PADDING_ALL(5),
-          },
-      .cornerRadius = CONTAINER_CORNER_RADIUS,
-      .backgroundColor = color};
 }
 
 void clearSelectedCards(void) {
@@ -228,18 +248,48 @@ void renderActionButtons(void) {
   CLAY({.layout = {.sizing = EXPAND_SIZING,
                    .childGap = BUTTON_GAP,
                    .padding = CONTAINER_PADDING}}) {
-    CLAY(buttonConfig(SECONDARY_COLOR)) {
+    CLAY({.id = CLAY_ID("SkipButton"),
+          .layout =
+              {
+                  .sizing = BUTTON_SIZING,
+                  .childAlignment = CHILD_ALIGNMENT_CENTER,
+                  .padding = BUTTON_PADDING,
+              },
+          .cornerRadius = CONTAINER_CORNER_RADIUS,
+          .backgroundColor = Clay_PointerOver(CLAY_ID("SkipButton"))
+                                 ? SECONDARY_COLOR_HOVER
+                                 : SECONDARY_COLOR}) {
       Clay_OnHover(handleSkipButtonHover, 0);
-      CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
+      CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
-    CLAY(buttonConfig(PRIMARY_COLOR)) {
+    CLAY({.id = CLAY_ID("DeselectAllButton"),
+          .layout =
+              {
+                  .sizing = BUTTON_SIZING,
+                  .childAlignment = CHILD_ALIGNMENT_CENTER,
+                  .padding = BUTTON_PADDING,
+              },
+          .cornerRadius = CONTAINER_CORNER_RADIUS,
+          .backgroundColor = Clay_PointerOver(CLAY_ID("DeselectAllButton"))
+                                 ? PRIMARY_COLOR_HOVER
+                                 : PRIMARY_COLOR}) {
       Clay_OnHover(handleDeselectAllButtonHover, 0);
       CLAY_TEXT(CLAY_STRING("Deselect All"),
-                CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
+                CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
-    CLAY(buttonConfig(DARK_COLOR)) {
+    CLAY({.id = CLAY_ID("PlayButton"),
+          .layout =
+              {
+                  .sizing = BUTTON_SIZING,
+                  .childAlignment = CHILD_ALIGNMENT_CENTER,
+                  .padding = BUTTON_PADDING,
+              },
+          .cornerRadius = CONTAINER_CORNER_RADIUS,
+          .backgroundColor = Clay_PointerOver(CLAY_ID("PlayButton"))
+                                 ? DARK_COLOR_HOVER
+                                 : DARK_COLOR}) {
       Clay_OnHover(handlePlayButtonHover, 0);
-      CLAY_TEXT(CLAY_STRING("Play"), CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
+      CLAY_TEXT(CLAY_STRING("Play"), CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
   }
 }
@@ -317,7 +367,7 @@ int gameLoop(void) {
     Clay_BeginLayout();
 
     CLAY({.layout = {.sizing = EXPAND_SIZING,
-                     .padding = CLAY_PADDING_ALL(32),
+                     .padding = WINDOW_PADDING,
                      .childGap = CONTAINER_GAP,
                      .layoutDirection = CLAY_TOP_TO_BOTTOM},
           .backgroundColor = BACKGROUND_COLOR}) {
