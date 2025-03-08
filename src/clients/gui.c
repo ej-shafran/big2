@@ -173,13 +173,27 @@ Clay_ElementDeclaration buttonConfig(Clay_Color color) {
       .backgroundColor = color};
 }
 
+void clearSelectedCards(void) {
+  CardIndexArray_Clear(&gameContext.selectedCardIndexes);
+  CardArray_Clear(&gameContext.selectedCards);
+  gameContext.selectedHandKind = NO_HAND;
+}
+
 void handleDeselectAllButtonHover(Clay_ElementId elementId,
                                   Clay_PointerData pointerData,
                                   intptr_t userData) {
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-    CardIndexArray_Clear(&gameContext.selectedCardIndexes);
-    CardArray_Clear(&gameContext.selectedCards);
-    gameContext.selectedHandKind = NO_HAND;
+    clearSelectedCards();
+  }
+}
+
+void handleSkipButtonHover(Clay_ElementId elementId,
+                           Clay_PointerData pointerData,
+                           intptr_t userData) {
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    clearSelectedCards();
+    gameContext.currentPlayerIndex =
+        (gameContext.currentPlayerIndex + 1) % gameContext.players.length;
   }
 }
 
@@ -188,6 +202,7 @@ void renderActionButtons(void) {
                    .childGap = BUTTON_GAP,
                    .padding = CONTAINER_PADDING}}) {
     CLAY(buttonConfig(SECONDARY_COLOR)) {
+      Clay_OnHover(handleSkipButtonHover, 0);
       CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
     }
     CLAY(buttonConfig(PRIMARY_COLOR)) {
@@ -307,9 +322,17 @@ int gameLoop(void) {
         // Selected hand container
         CLAY({.layout = {.sizing = EXPAND_SIZING,
                          .padding = CONTAINER_PADDING,
+                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
                          .childAlignment = CHILD_ALIGNMENT_CENTER},
               .cornerRadius = CONTAINER_CORNER_RADIUS,
               .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
+          CLAY() {
+            CLAY_TEXT(CLAY_STRING("Player "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+            char playerNumber[1] = {'0' + (gameContext.currentPlayerIndex + 1)};
+            Clay_String playerNumberString = {.chars = playerNumber,
+                                              .length = 1};
+            CLAY_TEXT(playerNumberString, CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+          }
           if (gameContext.selectedHandKind != NO_HAND) {
             CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.selectedHandKind],
                       CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
