@@ -27,7 +27,22 @@ bool parseArgs(int argc, const char** argv, Args* args) {
   while (argc > 0) {
     const char* arg = SHIFT_ARGS(argc, argv);
 
-    if (strcmp(arg, "--seed") == 0) {
+    if (strcmp(arg, "--help") == 0) {
+      fprintf(
+          stderr,
+          "Usage: %s [options]\n"
+          "\n"
+          "Play Big2.\n"
+          "\n"
+          "Options:\n"
+          "  --seed <seed>           Set the seed to play with (default: "
+          "random).\n"
+          "  --player-count <count>  Set how many players to play with "
+          "(default: 4).\n"
+          "  --help                  Show this help and message and exit.\n",
+          args->programName);
+      return false;
+    } else if (strcmp(arg, "--seed") == 0) {
       if (argc == 0) {
         fprintf(stderr, "missing argument for --seed\n");
         return false;
