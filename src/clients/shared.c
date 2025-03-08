@@ -53,11 +53,11 @@ bool parseArgs(int argc, const char** argv, Args* args) {
       errno = 0;
       deterministicSeed = strtoul(seedString, &endPointer, 16);
       if (errno != 0) {
-        perror(NULL);
+        fprintf(stderr, "invalid seed - not a hexadecimal number\n");
         return false;
       }
       if (endPointer == seedString) {
-        fprintf(stderr, "invalid seed string\n");
+        fprintf(stderr, "invalid seed - empty string\n");
         return false;
       }
     } else if (strcmp(arg, "--player-count") == 0) {
@@ -70,13 +70,13 @@ bool parseArgs(int argc, const char** argv, Args* args) {
       errno = 0;
       args->playerCount = strtoul(playerCountString, &endPointer, 10);
       if (errno != 0) {
-        perror(NULL);
+        fprintf(stderr, "invalid player count - not a number\n");
         return false;
       }
 
       if (endPointer == playerCountString || args->playerCount > MAX_PLAYERS ||
           args->playerCount < MIN_PLAYERS) {
-        fprintf(stderr, "invalid player count string\n");
+        fprintf(stderr, "invalid player count - empty string\n");
         return false;
       }
     } else {
