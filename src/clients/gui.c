@@ -38,9 +38,11 @@ const Clay_Color DARK_COLOR = {0, 0, 26, 255};
 
 // Fonts & Text
 const int FONT_ID_BODY_16 = 0;
-const Clay_TextElementConfig UI_TEXT_CONFIG = {.fontId = FONT_ID_BODY_16,
-                                               .fontSize = 40,
-                                               .textColor = UI_TEXT_COLOR};
+const Clay_TextElementConfig UI_TEXT_CONFIG = {
+    .fontId = FONT_ID_BODY_16,
+    .fontSize = 40,
+    .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+    .textColor = UI_TEXT_COLOR};
 const Clay_TextElementConfig CARD_TEXT_CONFIG = {.fontId = FONT_ID_BODY_16,
                                                  .fontSize = 32,
                                                  .textColor = CARD_TEXT_COLOR};
@@ -179,6 +181,11 @@ void clearSelectedCards(void) {
   gameContext.selectedHandKind = NO_HAND;
 }
 
+void nextPlayer(void) {
+  gameContext.currentPlayerIndex =
+      (gameContext.currentPlayerIndex + 1) % gameContext.players.length;
+}
+
 void handleDeselectAllButtonHover(Clay_ElementId elementId,
                                   Clay_PointerData pointerData,
                                   intptr_t userData) {
@@ -192,8 +199,28 @@ void handleSkipButtonHover(Clay_ElementId elementId,
                            intptr_t userData) {
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     clearSelectedCards();
-    gameContext.currentPlayerIndex =
-        (gameContext.currentPlayerIndex + 1) % gameContext.players.length;
+    nextPlayer();
+  }
+}
+
+void handlePlayButtonHover(Clay_ElementId elementId,
+                           Clay_PointerData pointerData,
+                           intptr_t userData) {
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    if (gameContext.selectedHandKind != NO_HAND &&
+        (gameContext.playedHandSize == 0 ||
+         gameContext.playedHandSize == gameContext.selectedCards.length)) {
+      gameContext.playedHandSize = gameContext.selectedCards.length;
+      Player* currentPlayer =
+          PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
+      for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
+        int32_t cardIndex =
+            CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
+        CardArray_Remove(&currentPlayer->hand, cardIndex);
+      }
+      clearSelectedCards();
+      nextPlayer();
+    }
   }
 }
 
@@ -211,6 +238,7 @@ void renderActionButtons(void) {
                 CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
     }
     CLAY(buttonConfig(DARK_COLOR)) {
+      Clay_OnHover(handlePlayButtonHover, 0);
       CLAY_TEXT(CLAY_STRING("Play"), CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
     }
   }
