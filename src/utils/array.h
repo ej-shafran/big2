@@ -39,8 +39,8 @@
   typeName arrayName##_Remove(arrayName* array, int32_t index);               \
   typeName arrayName##_RemoveSwapback(arrayName* array, int32_t index);       \
   void arrayName##_Set(arrayName* array, int32_t index, typeName value);      \
-  int32_t arrayName##_IndexOf(arrayName* array, typeName value,               \
-                              bool (*eqFunction)(typeName a, typeName b));    \
+  int32_t arrayName##_FindIndex(arrayName* array, typeName value,             \
+                                bool (*eqFunction)(typeName a, typeName b));  \
   void arrayName##_Quicksort(arrayName* array,                                \
                              bool (*gtFunction)(typeName a, typeName b));
 
@@ -119,8 +119,8 @@
     }                                                                          \
   }                                                                            \
                                                                                \
-  int32_t arrayName##_IndexOf(arrayName* array, typeName value,                \
-                              bool (*eqFunction)(typeName a, typeName b)) {    \
+  int32_t arrayName##_FindIndex(arrayName* array, typeName value,              \
+                                bool (*eqFunction)(typeName a, typeName b)) {  \
     for (int32_t i = 0; i < array->length; i++) {                              \
       if (eqFunction(array->internalArray[i], value))                          \
         return i;                                                              \

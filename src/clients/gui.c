@@ -122,7 +122,7 @@ void handleCardHover(Clay_ElementId elementId,
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     Player* currentPlayer =
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-    int32_t indexInSelectedCards = CardIndexArray_IndexOf(
+    int32_t indexInSelectedCards = CardIndexArray_FindIndex(
         &gameContext.selectedCardIndexes, index, CardIndex_Eq);
     Card card = CardArray_GetValue(&currentPlayer->hand, index);
     if (indexInSelectedCards == -1) {
@@ -140,15 +140,16 @@ void handleCardHover(Clay_ElementId elementId,
                                     indexInSelectedCards);
       CardArray_RemoveSwapback(
           &gameContext.selectedCards,
-          CardArray_IndexOf(&gameContext.selectedCards, card, Card_Eq));
+          CardArray_FindIndex(&gameContext.selectedCards, card, Card_Eq));
       gameContext.selectedHandKind = handKind(&gameContext.selectedCards);
     }
   }
 }
 
 void renderCard(Card card, int32_t index) {
-  int32_t isSelected = CardIndexArray_IndexOf(&gameContext.selectedCardIndexes,
-                                              index, CardIndex_Eq) != -1;
+  int32_t isSelected =
+      CardIndexArray_FindIndex(&gameContext.selectedCardIndexes, index,
+                               CardIndex_Eq) != -1;
   CLAY({
       .layout = {.sizing = isSelected ? SELECTED_CARD_SIZING : CARD_SIZING,
                  .childAlignment = CHILD_ALIGNMENT_CENTER,
