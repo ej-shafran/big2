@@ -128,12 +128,14 @@ void handleCardHover(Clay_ElementId elementId,
     if (indexInSelectedCards == -1) {
       if (gameContext.selectedCardIndexes.length < MAX_HAND_SIZE) {
         // Add to array
+        TraceLog(LOG_INFO, "selected card at index %d", index);
         CardIndexArray_Add(&gameContext.selectedCardIndexes, index);
         CardArray_Add(&gameContext.selectedCards, card);
         gameContext.selectedHandKind = handKind(&gameContext.selectedCards);
       }
     } else {
       // Remove from array
+      TraceLog(LOG_INFO, "deselected card at index %d", index);
       CardIndexArray_RemoveSwapback(&gameContext.selectedCardIndexes,
                                     indexInSelectedCards);
       CardArray_RemoveSwapback(
@@ -166,6 +168,7 @@ void handleCopySeedHover(Clay_ElementId elementId,
                          Clay_PointerData pointerData,
                          intptr_t userData) {
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    TraceLog(LOG_INFO, "copied seed to clipboard");
     // NOTE: assumes `seedString` is nul-terminated
     SetClipboardText(gameContext.seedString);
   }
@@ -210,6 +213,7 @@ void handleDeselectAllButtonHover(Clay_ElementId elementId,
                                   Clay_PointerData pointerData,
                                   intptr_t userData) {
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    TraceLog(LOG_INFO, "deselected all cards");
     clearSelectedCards();
   }
 }
@@ -218,6 +222,7 @@ void handleSkipButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    TraceLog(LOG_INFO, "skipped turn");
     clearSelectedCards();
     nextPlayer();
   }
@@ -230,6 +235,7 @@ void handlePlayButtonHover(Clay_ElementId elementId,
     if (gameContext.selectedHandKind != NO_HAND &&
         (gameContext.playedHandSize == 0 ||
          gameContext.playedHandSize == gameContext.selectedCards.length)) {
+      TraceLog(LOG_INFO, "played hand");
       gameContext.playedHandSize = gameContext.selectedCards.length;
       Player* currentPlayer =
           PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
@@ -306,7 +312,7 @@ void toggleDebugMode(void) {
   if (!triggeredDebugMode && pressingDebugKeys) {
     bool isDebugModeEnabled = Clay_IsDebugModeEnabled();
     TraceLog(LOG_INFO, "%s debug mode",
-             isDebugModeEnabled ? "disabling" : "enabling");
+             isDebugModeEnabled ? "disabled" : "enabled");
     Clay_SetDebugModeEnabled(!isDebugModeEnabled);
     triggeredDebugMode = true;
   }
@@ -447,14 +453,16 @@ int main(int argc, const char** argv) {
     return EXIT_FAILURE;
 
   pcg32Srandom(args.seed, SEQ);
-  printf("Seed: %" PRIx64 "\n\n", args.seed);
+  TraceLog(LOG_INFO,
+           "args = { .programName = \"%s\", .seed = %" PRIx64
+           ", .playerCount = %d }",
+           args.programName, args.seed, args.playerCount);
 
   size_t contextMemorySize = 2048;
   contextArena = CreateArenaWithCapacityAndMemory(contextMemorySize,
                                                   malloc(contextMemorySize));
 
   gameContext = generateGame(args.seed, args.playerCount, &contextArena);
-  printf("%d\n", gameContext.players.length);
 
   return gameLoop();
 }
