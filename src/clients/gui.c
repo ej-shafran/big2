@@ -173,6 +173,16 @@ Clay_ElementDeclaration buttonConfig(Clay_Color color) {
       .backgroundColor = color};
 }
 
+void handleDeselectAllButtonHover(Clay_ElementId elementId,
+                                  Clay_PointerData pointerData,
+                                  intptr_t userData) {
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    CardIndexArray_Clear(&gameContext.selectedCardIndexes);
+    CardArray_Clear(&gameContext.selectedCards);
+    gameContext.selectedHandKind = NO_HAND;
+  }
+}
+
 void renderActionButtons(void) {
   CLAY({.layout = {.sizing = EXPAND_SIZING,
                    .childGap = BUTTON_GAP,
@@ -181,6 +191,7 @@ void renderActionButtons(void) {
       CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
     }
     CLAY(buttonConfig(PRIMARY_COLOR)) {
+      Clay_OnHover(handleDeselectAllButtonHover, 0);
       CLAY_TEXT(CLAY_STRING("Deselect All"),
                 CLAY_TEXT_CONFIG(BUTTON_TEXT_CONFIG));
     }
