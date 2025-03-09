@@ -250,7 +250,8 @@ void handlePlayButtonHover(Clay_ElementId elementId,
       gameContext.playedHandSize = gameContext.selectedCardIndexes.length;
       Player* currentPlayer =
           PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-      for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
+      for (int32_t i = gameContext.selectedCardIndexes.length - 1; i >= 0;
+           i--) {
         int32_t cardIndex =
             CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
         CardArray_Remove(&currentPlayer->hand, cardIndex);
