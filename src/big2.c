@@ -146,19 +146,35 @@ bool isFullHouse(CardArray* hand, CardIndexArray* selectedIndexes) {
           (Card_EqRank(third, first) || Card_EqRank(third, last)));
 }
 
-// TODO: doesn't work because we no longer sort by rank
 bool isFourOfAKind(CardArray* hand, CardIndexArray* selectedIndexes) {
-  Card first =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
-  Card second =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 1));
-  Card last =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 4));
-  Card rank = Card_EqRank(first, second) ? first : last;
-  for (int i = 1; i < selectedIndexes->length - 1; i++) {
-    if (!Card_EqRank(rank, CardArray_GetValue(hand, CardIndexArray_GetValue(
-                                                        selectedIndexes, i))))
+  // A four-of-a-kind is made of four cards of the "main" rank,
+  // and one card of a "filler" rank
+  int32_t firstIndex = CardIndexArray_GetValue(selectedIndexes, 0);
+  CardRank main = CardArray_GetValue(hand, firstIndex).rank;
+  CardRank filler = RANK_AMOUNT;
+  // Keep track of whether or not we've seen multiple instances of `main`;
+  // if we haven't, it may be the filler card
+  bool seenMultipleMain = false;
+
+  for (int32_t i = 1; i < selectedIndexes->length; i++) {
+    int32_t index = CardIndexArray_GetValue(selectedIndexes, i);
+    CardRank rank = CardArray_GetValue(hand, index).rank;
+    if (rank == main) {
+      // What we have in `main` is for sure the main rank
+      seenMultipleMain = true;
+    } else if (filler == RANK_AMOUNT) {
+      // We don't know what the filler rank is yet,
+      // so set this rank as the filler rank
+      filler = rank;
+    } else if (!seenMultipleMain && rank == filler) {
+      // `main` is actually the `filler`, and vice-versa
+      filler = main;
+      main = rank;
+      seenMultipleMain = true;
+    } else {
+      // We've seen multiple non-main cards
       return false;
+    }
   }
   return true;
 }
