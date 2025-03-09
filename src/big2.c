@@ -111,20 +111,22 @@ bool isFlush(CardArray* hand, CardIndexArray* selectedIndexes) {
   return true;
 }
 
-// TODO: doesn't work because we no longer sort by rank
 bool isStraight(CardArray* hand, CardIndexArray* selectedIndexes) {
-  CardRank latestRank =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0))
-          .rank;
-  for (int i = 1; i < selectedIndexes->length; i++) {
-    if (((CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, i))
-              .rank -
-          latestRank) %
-         RANK_AMOUNT) != 1)
-      return false;
-    latestRank += 1;
+  // Use a bit-set to mark which ranks exist in the selected cards
+  int16_t rankBitSet = 0;
+  // Keep track of the minimum rank encountered
+  CardRank minRank = RANK_AMOUNT;
+  for (int32_t i = 0; i < selectedIndexes->length; i++) {
+    int32_t index = CardIndexArray_GetValue(selectedIndexes, i);
+    CardRank rank = CardArray_GetValue(hand, index).rank;
+    if (rank < minRank)
+      minRank = rank;
+    rankBitSet |= 1 << rank;
   }
-  return true;
+  // If the selected cards form a straight, the bit-set will be a sequence of 5
+  // 1s starting at the minimum rank's bit
+  int16_t targetBitMask = 0b11111 << minRank;
+  return (rankBitSet & targetBitMask) == targetBitMask;
 }
 
 // TODO: doesn't work because we no longer sort by rank
