@@ -129,21 +129,27 @@ bool isStraight(CardArray* hand, CardIndexArray* selectedIndexes) {
   return (rankBitSet & targetBitMask) == targetBitMask;
 }
 
-// TODO: doesn't work because we no longer sort by rank
 bool isFullHouse(CardArray* hand, CardIndexArray* selectedIndexes) {
-  Card first =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 0));
-  Card second =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 1));
-  Card third =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 2));
-  Card fourth =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 3));
-  Card last =
-      CardArray_GetValue(hand, CardIndexArray_GetValue(selectedIndexes, 4));
+  // NOTE: since this in only run on hands that aren't four-of-a-kind,
+  // we just check that there are only two distinct ranks in the hand
 
-  return (Card_EqRank(second, first) && Card_EqRank(fourth, last) &&
-          (Card_EqRank(third, first) || Card_EqRank(third, last)));
+  int32_t firstIndex = CardIndexArray_GetValue(selectedIndexes, 0);
+  CardRank first = CardArray_GetValue(hand, firstIndex).rank;
+  CardRank second = RANK_AMOUNT;
+
+  for (int32_t i = 1; i < selectedIndexes->length; i++) {
+    int32_t index = CardIndexArray_GetValue(selectedIndexes, i);
+    CardRank rank = CardArray_GetValue(hand, index).rank;
+    if (rank != first) {
+      if (second == RANK_AMOUNT) {
+        second = rank;
+      } else if (rank != second) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool isFourOfAKind(CardArray* hand, CardIndexArray* selectedIndexes) {
@@ -198,11 +204,11 @@ HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes) {
       if (isStraight(hand, selectedIndexes))
         return STRAIGHT;
 
-      if (isFullHouse(hand, selectedIndexes))
-        return FULL_HOUSE;
-
       if (isFourOfAKind(hand, selectedIndexes))
         return FOUR_OF_A_KIND;
+
+      if (isFullHouse(hand, selectedIndexes))
+        return FULL_HOUSE;
 
       return NO_HAND;
     }
