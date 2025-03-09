@@ -35,11 +35,11 @@ bool Card_GtSuit(Card a, Card b) {
 
 bool CardIndex_Eq(int32_t a, int32_t b) {
   return a == b;
-};
+}
 
 bool CardIndex_Gt(int32_t a, int32_t b) {
   return a > b;
-};
+}
 
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
   char* seedString = Arena_Allocate(20 * sizeof(char), arena);
@@ -125,7 +125,7 @@ bool isStraight(CardArray* hand, CardIndexArray* selectedIndexes) {
   }
   // If the selected cards form a straight, the bit-set will be a sequence of 5
   // 1s starting at the minimum rank's bit
-  int16_t targetBitMask = 0b11111 << minRank;
+  int16_t targetBitMask = 0x1f /* 0b11111 */ << minRank;
   return (rankBitSet & targetBitMask) == targetBitMask;
 }
 

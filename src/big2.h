@@ -64,7 +64,7 @@ ARRAY__DECLARE(Player, PlayerArray)
 
 bool CardIndex_Eq(int32_t a, int32_t b);
 bool CardIndex_Gt(int32_t a, int32_t b);
-ARRAY__DECLARE(int32_t, CardIndexArray);
+ARRAY__DECLARE(int32_t, CardIndexArray)
 
 typedef struct {
   PlayerArray players;

@@ -44,9 +44,7 @@
                                 bool (*eqFunction)(typeName a, typeName b));  \
   void arrayName##_Insert(arrayName* array, int32_t index, typeName value);   \
   void arrayName##_InsertSorted(arrayName* array, typeName value,             \
-                                bool (*gtFunction)(typeName a, typeName b));  \
-  void arrayName##_Quicksort(arrayName* array,                                \
-                             bool (*gtFunction)(typeName a, typeName b));
+                                bool (*gtFunction)(typeName a, typeName b));
 
 #define ARRAY__DEFINE(typeName, arrayName)                                     \
   typeName typeName##_ARRAY_DEFAULT = DEFAULT_STRUCT;                          \
@@ -147,42 +145,6 @@
                                 bool (*gtFunction)(typeName a, typeName b)) {  \
     int32_t largerIndex = arrayName##_FindIndex(array, value, gtFunction);     \
     arrayName##_Insert(array, largerIndex, value);                             \
-  }                                                                            \
-                                                                               \
-  int32_t arrayName##_QuicksortPartition(                                      \
-      arrayName* array, int32_t low, int32_t high,                             \
-      bool (*gtFunction)(typeName a, typeName b)) {                            \
-    typeName pivot = arrayName##_GetValue(array, high);                        \
-    int32_t i = low;                                                           \
-    for (int32_t j = low; j < high; j++) {                                     \
-      typeName jValue = arrayName##_GetValue(array, j);                        \
-      if (!gtFunction(jValue, pivot)) {                                        \
-        typeName iValue = arrayName##_GetValue(array, i);                      \
-        arrayName##_Set(array, i, jValue);                                     \
-        arrayName##_Set(array, j, iValue);                                     \
-        i += 1;                                                                \
-      }                                                                        \
-    }                                                                          \
-    typeName iValue = arrayName##_GetValue(array, i);                          \
-    arrayName##_Set(array, i, arrayName##_GetValue(array, high));              \
-    arrayName##_Set(array, high, iValue);                                      \
-    return i;                                                                  \
-  }                                                                            \
-                                                                               \
-  void arrayName##_QuicksortImpl(arrayName* array, int32_t low, int32_t high,  \
-                                 bool (*gtFunction)(typeName a, typeName b)) { \
-    if (low >= high)                                                           \
-      return;                                                                  \
-                                                                               \
-    int32_t partitionIndex =                                                   \
-        arrayName##_QuicksortPartition(array, low, high, gtFunction);          \
-    arrayName##_QuicksortImpl(array, low, partitionIndex - 1, gtFunction);     \
-    arrayName##_QuicksortImpl(array, partitionIndex + 1, high, gtFunction);    \
-  }                                                                            \
-                                                                               \
-  void arrayName##_Quicksort(arrayName* array,                                 \
-                             bool (*gtFunction)(typeName a, typeName b)) {     \
-    return arrayName##_QuicksortImpl(array, 0, array->length - 1, gtFunction); \
   }
 
 #endif  // ARRAY_H_

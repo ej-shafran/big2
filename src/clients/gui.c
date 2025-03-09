@@ -23,7 +23,7 @@ Arena contextArena = {0};
 GameContext gameContext = {0};
 
 // Textures
-Texture2D SUIT_TO_ICON[SUIT_AMOUNT] = {};
+Texture2D SUIT_TO_ICON[SUIT_AMOUNT] = {0};
 
 // Colors
 const Clay_Color BACKGROUND_COLOR = {0, 0, 0, 255};
@@ -62,7 +62,7 @@ const Clay_TextElementConfig LIGHT_BUTTON_TEXT_CONFIG = {
     .wrapMode = CLAY_TEXT_WRAP_WORDS};
 // Layout
 //   Sizing
-const Clay_Sizing EXPAND_SIZING = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()};
+const Clay_Sizing EXPAND_SIZING = {CLAY_SIZING_GROW(0), CLAY_SIZING_GROW(0)};
 const int CARD_WIDTH = 90;
 const int CARD_HEIGHT = CARD_WIDTH * 14 / 9;
 const Clay_Sizing CARD_SIZING = {
@@ -74,7 +74,7 @@ const int SELECTED_CARD_HEIGHT = SELECTED_CARD_WIDTH * 14 / 9;
 const Clay_Sizing SELECTED_CARD_SIZING = {
     .width = CLAY_SIZING_FIXED(SELECTED_CARD_WIDTH),
     .height = CLAY_SIZING_FIXED(SELECTED_CARD_HEIGHT)};
-const Clay_Sizing BUTTON_SIZING = {.width = CLAY_SIZING_GROW()};
+const Clay_Sizing BUTTON_SIZING = {.width = CLAY_SIZING_GROW(0)};
 //   Gap
 const int32_t CONTAINER_GAP = 32;
 const int32_t CARD_GAP = 10;
@@ -119,6 +119,8 @@ void handleCardHover(Clay_ElementId elementId,
                      intptr_t userData) {
   int32_t index = userData;
 
+  (void)elementId;
+
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     Player* currentPlayer =
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
@@ -159,13 +161,15 @@ void renderCard(Card card, int32_t index) {
     CLAY_TEXT(RANK_TO_STRING[card.rank], CLAY_TEXT_CONFIG(CARD_TEXT_CONFIG));
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(20),
                                 .height = CLAY_SIZING_FIXED(30)}},
-          .image = {&SUIT_TO_ICON[card.suit]}}) {}
+          .image = {&SUIT_TO_ICON[card.suit], .sourceDimensions = {0}}}) {}
   }
 }
 
 void handleCopySeedHover(Clay_ElementId elementId,
                          Clay_PointerData pointerData,
                          intptr_t userData) {
+  (void)elementId;
+  (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     TraceLog(LOG_INFO, "copied seed to clipboard");
     // NOTE: assumes `seedString` is nul-terminated
@@ -179,7 +183,7 @@ void renderSeed(void) {
   CLAY({.layout = {.sizing = EXPAND_SIZING,
                    .childGap = BUTTON_GAP,
                    .childAlignment = CHILD_ALIGNMENT_CENTER}}) {
-    CLAY() {
+    CLAY({0}) {
       CLAY_TEXT(CLAY_STRING("Seed: "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
       CLAY_TEXT(seedString, CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
     }
@@ -210,6 +214,8 @@ void nextPlayer(void) {
 void handleDeselectAllButtonHover(Clay_ElementId elementId,
                                   Clay_PointerData pointerData,
                                   intptr_t userData) {
+  (void)elementId;
+  (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     TraceLog(LOG_INFO, "deselected all cards");
     clearSelectedCards();
@@ -219,6 +225,8 @@ void handleDeselectAllButtonHover(Clay_ElementId elementId,
 void handleSkipButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
+  (void)elementId;
+  (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     TraceLog(LOG_INFO, "skipped turn");
     clearSelectedCards();
@@ -229,6 +237,8 @@ void handleSkipButtonHover(Clay_ElementId elementId,
 void handlePlayButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
+  (void)elementId;
+  (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     if (gameContext.selectedHandKind != NO_HAND &&
         (gameContext.playedHandSize == 0 ||
@@ -336,7 +346,7 @@ int gameLoop(void) {
       clayMemorySize, malloc(clayMemorySize));
   Clay_Initialize(clayArena,
                   (Clay_Dimensions){GetScreenWidth(), GetScreenHeight()},
-                  (Clay_ErrorHandler){handleClayErrors});
+                  (Clay_ErrorHandler){handleClayErrors, 0});
 
   // Load textures
   SUIT_TO_ICON[DIAMONDS] = LoadTexture("resources/suits-diamonds.png");
@@ -409,7 +419,7 @@ int gameLoop(void) {
                          .childAlignment = CHILD_ALIGNMENT_CENTER},
               .cornerRadius = CONTAINER_CORNER_RADIUS,
               .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
-          CLAY() {
+          CLAY({0}) {
             CLAY_TEXT(CLAY_STRING("Player "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
             char playerNumber[1] = {'0' + (gameContext.currentPlayerIndex + 1)};
             Clay_String playerNumberString = {.chars = playerNumber,
@@ -423,7 +433,7 @@ int gameLoop(void) {
         }
 
         // Other UI
-        CLAY({.layout = {.sizing = {.height = CLAY_SIZING_GROW(),
+        CLAY({.layout = {.sizing = {.height = CLAY_SIZING_GROW(0),
                                     .width = CLAY_SIZING_PERCENT(.75)},
                          .padding = CONTAINER_PADDING,
                          .layoutDirection = CLAY_TOP_TO_BOTTOM},
