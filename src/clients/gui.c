@@ -11,6 +11,7 @@
 
 #define SEQ 54u
 
+#ifdef CLAY_DEBUG
 #if __APPLE__
 #define KEY_LEFT_DEBUG_MODIFER KEY_LEFT_SUPER
 #define KEY_RIGHT_DEBUG_MODIFER KEY_RIGHT_SUPER
@@ -18,6 +19,7 @@
 #define KEY_LEFT_DEBUG_MODIFER KEY_LEFT_CONTROL
 #define KEY_RIGHT_DEBUG_MODIFER KEY_RIGHT_CONTROL
 #endif  // __APPLE__
+#endif  // CLAY_DEBUG
 
 Arena contextArena = {0};
 GameContext gameContext = {0};
@@ -309,6 +311,7 @@ void renderActionButtons(void) {
   }
 }
 
+#ifdef CLAY_DEBUG
 bool triggeredDebugMode = false;
 
 void toggleDebugMode(void) {
@@ -330,6 +333,7 @@ void toggleDebugMode(void) {
     triggeredDebugMode = false;
   }
 }
+#endif  // CLAY_DEBUG
 
 void handleClayErrors(Clay_ErrorData errorData) {
   // See the Clay_ErrorData struct for more information
@@ -377,7 +381,9 @@ int gameLoop(void) {
     Player* currentPlayer =
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
 
+#ifdef CLAY_DEBUG
     toggleDebugMode();
+#endif  // CLAY_DEBUG
 
     Clay_BeginLayout();
 
