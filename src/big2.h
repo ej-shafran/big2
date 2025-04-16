@@ -80,10 +80,6 @@ typedef struct {
 
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena);
 HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes);
-bool isPlayable(CardArray* hand,
-                CardIndexArray* selectedIndexes,
-                HandKind selectedHandKind,
-                CardArray* lastPlayedHand,
-                HandKind lastPlayedHandKind);
+bool isSelectedHandPlayable(GameContext* gameContext);
 
 #endif  // BIG2_H_

@@ -311,12 +311,7 @@ void renderActionButtons(void) {
       CLAY_TEXT(CLAY_STRING("Deselect All"),
                 CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
-    Player* currentPlayer =
-        PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-    bool handIsPlayable =
-        isPlayable(&currentPlayer->hand, &gameContext.selectedCardIndexes,
-                   gameContext.selectedHandKind, &gameContext.lastPlayedHand,
-                   gameContext.lastPlayedHandKind);
+    bool handIsPlayable = isSelectedHandPlayable(&gameContext);
     CLAY({.id = CLAY_ID("PlayButton"),
           .layout =
               {

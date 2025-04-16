@@ -219,29 +219,30 @@ HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes) {
   return NO_HAND;
 }
 
-bool isPlayable(CardArray* hand,
-                CardIndexArray* selectedIndexes,
-                HandKind selectedHandKind,
-                CardArray* lastPlayedHand,
-                HandKind lastPlayedHandKind) {
-  if (selectedHandKind == NO_HAND)
+bool isSelectedHandPlayable(GameContext* gameContext) {
+  if (gameContext->selectedHandKind == NO_HAND)
     return false;
-  if (lastPlayedHandKind == NO_HAND)
+  if (gameContext->lastPlayedHandKind == NO_HAND)
     return true;
 
-  if (selectedIndexes->length != lastPlayedHand->length)
+  if (gameContext->selectedCardIndexes.length !=
+      gameContext->lastPlayedHand.length)
     return false;
 
-  if (selectedHandKind != lastPlayedHandKind)
-    return selectedHandKind > lastPlayedHandKind;
+  if (gameContext->selectedHandKind != gameContext->lastPlayedHandKind)
+    return gameContext->selectedHandKind > gameContext->lastPlayedHandKind;
 
   int32_t highestSelectedIndex =
-      CardIndexArray_GetValue(selectedIndexes, selectedIndexes->length - 1);
+      CardIndexArray_GetValue(&gameContext->selectedCardIndexes,
+                              gameContext->selectedCardIndexes.length - 1);
+  Player* currentPlayer =
+      PlayerArray_Get(&gameContext->players, gameContext->currentPlayerIndex);
+  CardArray* hand = &currentPlayer->hand;
   Card highestSelectedCard = CardArray_GetValue(hand, highestSelectedIndex);
-  Card highestLastPlayedCard =
-      CardArray_GetValue(lastPlayedHand, lastPlayedHand->length - 1);
+  Card highestLastPlayedCard = CardArray_GetValue(
+      &gameContext->lastPlayedHand, gameContext->lastPlayedHand.length - 1);
 
-  switch (selectedHandKind) {
+  switch (gameContext->selectedHandKind) {
     case HAND_KIND_AMOUNT:
     case NO_HAND:
       assert(0);
