@@ -252,32 +252,32 @@ void handlePlayButtonHover(Clay_ElementId elementId,
   (void)elementId;
   bool handIsPlayable = (bool)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    if (!handIsPlayable)
+      return;
+
+    TraceLog(LOG_INFO, "played hand");
+    gameContext.skippedCount = 0;
     Player* currentPlayer =
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-    if (gameContext.selectedHandKind != NO_HAND && handIsPlayable) {
-      TraceLog(LOG_INFO, "played hand");
-      gameContext.skippedCount = 0;
-      // Update last played hand
-      CardArray_Clear(&gameContext.lastPlayedHand);
-      for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
-        int32_t cardIndex =
-            CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
-        CardArray_Add(&gameContext.lastPlayedHand,
-                      CardArray_GetValue(&currentPlayer->hand, cardIndex));
-      }
-      gameContext.lastPlayedHandKind = gameContext.selectedHandKind;
-
-      // Remove cards from player's hand
-      for (int32_t i = gameContext.selectedCardIndexes.length - 1; i >= 0;
-           i--) {
-        int32_t cardIndex =
-            CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
-        CardArray_Remove(&currentPlayer->hand, cardIndex);
-      }
-
-      clearSelectedCards();
-      nextPlayer();
+    // Update last played hand
+    CardArray_Clear(&gameContext.lastPlayedHand);
+    for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
+      int32_t cardIndex =
+          CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
+      CardArray_Add(&gameContext.lastPlayedHand,
+                    CardArray_GetValue(&currentPlayer->hand, cardIndex));
     }
+    gameContext.lastPlayedHandKind = gameContext.selectedHandKind;
+
+    // Remove cards from player's hand
+    for (int32_t i = gameContext.selectedCardIndexes.length - 1; i >= 0; i--) {
+      int32_t cardIndex =
+          CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
+      CardArray_Remove(&currentPlayer->hand, cardIndex);
+    }
+
+    clearSelectedCards();
+    nextPlayer();
   }
 }
 
