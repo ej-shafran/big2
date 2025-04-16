@@ -73,6 +73,7 @@ typedef struct {
   const char* seedString;
   int32_t seedStringLength;
   int32_t currentPlayerIndex;
+  int32_t skippedCount;
   HandKind selectedHandKind;
   HandKind lastPlayedHandKind;
 } GameContext;

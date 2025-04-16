@@ -225,7 +225,6 @@ void handleDeselectAllButtonHover(Clay_ElementId elementId,
   }
 }
 
-int32_t skippedCount = 0;
 void handleSkipButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
@@ -233,11 +232,11 @@ void handleSkipButtonHover(Clay_ElementId elementId,
   (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     TraceLog(LOG_INFO, "skipped turn");
-    skippedCount += 1;
-    if (skippedCount == gameContext.players.length - 1) {
+    gameContext.skippedCount += 1;
+    if (gameContext.skippedCount == gameContext.players.length - 1) {
       CardArray_Clear(&gameContext.lastPlayedHand);
       gameContext.lastPlayedHandKind = NO_HAND;
-      skippedCount = 0;
+      gameContext.skippedCount = 0;
     }
     clearSelectedCards();
     nextPlayer();
@@ -254,7 +253,7 @@ void handlePlayButtonHover(Clay_ElementId elementId,
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
     if (gameContext.selectedHandKind != NO_HAND && handIsPlayable) {
       TraceLog(LOG_INFO, "played hand");
-      skippedCount = 0;
+      gameContext.skippedCount = 0;
       // Update last played hand
       CardArray_Clear(&gameContext.lastPlayedHand);
       for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
