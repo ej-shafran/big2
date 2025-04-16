@@ -69,14 +69,20 @@ ARRAY__DECLARE(int32_t, CardIndexArray)
 typedef struct {
   PlayerArray players;
   CardIndexArray selectedCardIndexes;
+  CardArray lastPlayedHand;
   const char* seedString;
   int32_t seedStringLength;
   int32_t currentPlayerIndex;
-  int32_t playedHandSize;
   HandKind selectedHandKind;
+  HandKind lastPlayedHandKind;
 } GameContext;
 
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena);
 HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes);
+bool isPlayable(CardArray* hand,
+                CardIndexArray* selectedIndexes,
+                HandKind selectedHandKind,
+                CardArray* lastPlayedHand,
+                HandKind lastPlayedHandKind);
 
 #endif  // BIG2_H_

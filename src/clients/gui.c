@@ -224,6 +224,7 @@ void handleDeselectAllButtonHover(Clay_ElementId elementId,
   }
 }
 
+int32_t skippedCount = 0;
 void handleSkipButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
@@ -231,6 +232,12 @@ void handleSkipButtonHover(Clay_ElementId elementId,
   (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     TraceLog(LOG_INFO, "skipped turn");
+    skippedCount += 1;
+    if (skippedCount == gameContext.players.length - 1) {
+      CardArray_Clear(&gameContext.lastPlayedHand);
+      gameContext.lastPlayedHandKind = NO_HAND;
+      skippedCount = 0;
+    }
     clearSelectedCards();
     nextPlayer();
   }
@@ -242,20 +249,32 @@ void handlePlayButtonHover(Clay_ElementId elementId,
   (void)elementId;
   (void)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    Player* currentPlayer =
+        PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
     if (gameContext.selectedHandKind != NO_HAND &&
-        (gameContext.playedHandSize == 0 ||
-         gameContext.playedHandSize ==
-             gameContext.selectedCardIndexes.length)) {
+        (isPlayable(&currentPlayer->hand, &gameContext.selectedCardIndexes,
+                    gameContext.selectedHandKind, &gameContext.lastPlayedHand,
+                    gameContext.lastPlayedHandKind))) {
       TraceLog(LOG_INFO, "played hand");
-      gameContext.playedHandSize = gameContext.selectedCardIndexes.length;
-      Player* currentPlayer =
-          PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
+      skippedCount = 0;
+      // Update last played hand
+      CardArray_Clear(&gameContext.lastPlayedHand);
+      for (int32_t i = 0; i < gameContext.selectedCardIndexes.length; i++) {
+        int32_t cardIndex =
+            CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
+        CardArray_Add(&gameContext.lastPlayedHand,
+                      CardArray_GetValue(&currentPlayer->hand, cardIndex));
+      }
+      gameContext.lastPlayedHandKind = gameContext.selectedHandKind;
+
+      // Remove cards from player's hand
       for (int32_t i = gameContext.selectedCardIndexes.length - 1; i >= 0;
            i--) {
         int32_t cardIndex =
             CardIndexArray_GetValue(&gameContext.selectedCardIndexes, i);
         CardArray_Remove(&currentPlayer->hand, cardIndex);
       }
+
       clearSelectedCards();
       nextPlayer();
     }
@@ -435,6 +454,11 @@ int gameLoop(void) {
           }
           if (gameContext.selectedHandKind != NO_HAND) {
             CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.selectedHandKind],
+                      CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+          }
+          CLAY({.layout = {.sizing = EXPAND_SIZING}}) {}
+          if (gameContext.lastPlayedHandKind != NO_HAND) {
+            CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.lastPlayedHandKind],
                       CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
           }
         }

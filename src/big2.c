@@ -48,11 +48,12 @@ GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
   GameContext gameContext = {
       .players = PlayerArray_ArenaAllocate(playerCount, arena),
       .selectedCardIndexes = CardIndexArray_ArenaAllocate(MAX_HAND_SIZE, arena),
+      .lastPlayedHand = CardArray_ArenaAllocate(MAX_HAND_SIZE, arena),
       .selectedHandKind = NO_HAND,
       .seedString = seedString,
       .seedStringLength = seedStringLength,
       .currentPlayerIndex = 0,
-      .playedHandSize = 0};
+  };
 
   int cardsPerPlayer = CARD_AMOUNT / playerCount;
 
@@ -216,4 +217,47 @@ HandKind handKind(CardArray* hand, CardIndexArray* selectedIndexes) {
 
   assert(0);
   return NO_HAND;
+}
+
+bool isPlayable(CardArray* hand,
+                CardIndexArray* selectedIndexes,
+                HandKind selectedHandKind,
+                CardArray* lastPlayedHand,
+                HandKind lastPlayedHandKind) {
+  if (selectedHandKind == NO_HAND)
+    return false;
+  if (lastPlayedHandKind == NO_HAND)
+    return true;
+
+  if (selectedIndexes->length != lastPlayedHand->length)
+    return false;
+
+  if (selectedHandKind != lastPlayedHandKind)
+    return selectedHandKind > lastPlayedHandKind;
+
+  int32_t highestSelectedIndex =
+      CardIndexArray_GetValue(selectedIndexes, selectedIndexes->length - 1);
+  Card highestSelectedCard = CardArray_GetValue(hand, highestSelectedIndex);
+  Card highestLastPlayedCard =
+      CardArray_GetValue(lastPlayedHand, lastPlayedHand->length - 1);
+
+  switch (selectedHandKind) {
+    case HAND_KIND_AMOUNT:
+    case NO_HAND:
+      assert(0);
+      return false;
+    case HIGH_CARD:
+    case PAIR:
+    case THREE_OF_A_KIND: {
+      int32_t selectedValue =
+          (highestSelectedCard.rank * SUIT_AMOUNT) + highestSelectedCard.suit;
+      int32_t lastPlayedValue = (highestLastPlayedCard.rank * SUIT_AMOUNT) +
+                                highestLastPlayedCard.suit;
+      return selectedValue > lastPlayedValue;
+    } break;
+    default:
+      break;
+  }
+
+  return Card_Gt(highestSelectedCard, highestLastPlayedCard);
 }
