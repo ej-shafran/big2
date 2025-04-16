@@ -229,8 +229,11 @@ void handleSkipButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
   (void)elementId;
-  (void)userData;
+  bool canSkip = (bool)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    if (!canSkip)
+      return;
+
     TraceLog(LOG_INFO, "skipped turn");
     gameContext.skippedCount += 1;
     if (gameContext.skippedCount == gameContext.players.length - 1) {
@@ -282,6 +285,7 @@ void renderActionButtons(void) {
   CLAY({.layout = {.sizing = EXPAND_SIZING,
                    .childGap = BUTTON_GAP,
                    .padding = CONTAINER_PADDING}}) {
+    bool canSkip = gameContext.lastPlayedHandKind != NO_HAND;
     CLAY({.id = CLAY_ID("SkipButton"),
           .layout =
               {
@@ -290,12 +294,14 @@ void renderActionButtons(void) {
                   .padding = BUTTON_PADDING,
               },
           .cornerRadius = CONTAINER_CORNER_RADIUS,
-          .backgroundColor = Clay_PointerOver(CLAY_ID("SkipButton"))
+          .backgroundColor = !canSkip ? DISABLED_COLOR
+                             : Clay_PointerOver(CLAY_ID("SkipButton"))
                                  ? SECONDARY_COLOR_HOVER
                                  : SECONDARY_COLOR}) {
-      Clay_OnHover(handleSkipButtonHover, 0);
+      Clay_OnHover(handleSkipButtonHover, canSkip);
       CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
+
     CLAY({.id = CLAY_ID("DeselectAllButton"),
           .layout =
               {
@@ -311,6 +317,7 @@ void renderActionButtons(void) {
       CLAY_TEXT(CLAY_STRING("Deselect All"),
                 CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
+
     bool handIsPlayable = isSelectedHandPlayable(&gameContext);
     CLAY({.id = CLAY_ID("PlayButton"),
           .layout =
