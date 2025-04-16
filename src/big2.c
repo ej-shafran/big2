@@ -53,6 +53,8 @@ GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
       .seedString = seedString,
       .seedStringLength = seedStringLength,
       .currentPlayerIndex = 0,
+      .winnerIndex = -1,
+      .skippedCount = 0,
   };
 
   int cardsPerPlayer = CARD_AMOUNT / playerCount;

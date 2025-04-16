@@ -44,25 +44,30 @@ const Clay_Color LIGHT_COLOR = {245, 245, 245, 255};
 const Clay_Color LIGHT_COLOR_HOVER = {225, 225, 225, 255};
 
 // Fonts & Text
-const int FONT_ID_BODY_16 = 0;
+enum { FONT_ID_UI, FONT_ID_GAME_OVER, FONT_AMOUNT };
 const Clay_TextElementConfig UI_TEXT_CONFIG = {
-    .fontId = FONT_ID_BODY_16,
+    .fontId = FONT_ID_UI,
     .fontSize = 40,
     .textAlignment = CLAY_TEXT_ALIGN_CENTER,
     .textColor = LIGHT_TEXT_COLOR};
-const Clay_TextElementConfig CARD_TEXT_CONFIG = {.fontId = FONT_ID_BODY_16,
+const Clay_TextElementConfig CARD_TEXT_CONFIG = {.fontId = FONT_ID_UI,
                                                  .fontSize = 32,
                                                  .textColor = DARK_TEXT_COLOR};
 const Clay_TextElementConfig DARK_BUTTON_TEXT_CONFIG = {
-    .fontId = FONT_ID_BODY_16,
+    .fontId = FONT_ID_UI,
     .fontSize = 40,
     .textColor = LIGHT_TEXT_COLOR,
     .wrapMode = CLAY_TEXT_WRAP_WORDS};
 const Clay_TextElementConfig LIGHT_BUTTON_TEXT_CONFIG = {
-    .fontId = FONT_ID_BODY_16,
+    .fontId = FONT_ID_UI,
     .fontSize = 40,
     .textColor = DARK_TEXT_COLOR,
     .wrapMode = CLAY_TEXT_WRAP_WORDS};
+const Clay_TextElementConfig GAME_OVER_TEXT_CONFIG = {
+    .fontId = FONT_ID_GAME_OVER,
+    .fontSize = 72,
+    .textColor = LIGHT_TEXT_COLOR,
+};
 // Layout
 //   Sizing
 const Clay_Sizing EXPAND_SIZING = {CLAY_SIZING_GROW(0), CLAY_SIZING_GROW(0)};
@@ -115,6 +120,12 @@ const Clay_String HAND_KIND_TO_STRING[HAND_KIND_AMOUNT] = {
     [FULL_HOUSE] = CLAY_STRING("Full House"),
     [FOUR_OF_A_KIND] = CLAY_STRING("Four of a Kind"),
     [STRAIGHT_FLUSH] = CLAY_STRING("Straight Flush"),
+};
+const Clay_String PLAYER_INDEX_TO_STRING[MAX_PLAYERS] = {
+    [0] = CLAY_STRING("Player 1"),
+    [1] = CLAY_STRING("Player 2"),
+    [2] = CLAY_STRING("Player 3"),
+    [3] = CLAY_STRING("Player 4"),
 };
 
 void handleCardHover(Clay_ElementId elementId,
@@ -279,8 +290,12 @@ void handlePlayButtonHover(Clay_ElementId elementId,
       CardArray_Remove(&currentPlayer->hand, cardIndex);
     }
 
-    clearSelectedCards();
-    nextPlayer();
+    if (currentPlayer->hand.length == 0) {
+      gameContext.winnerIndex = gameContext.currentPlayerIndex;
+    } else {
+      clearSelectedCards();
+      nextPlayer();
+    }
   }
 }
 
@@ -342,6 +357,79 @@ void renderActionButtons(void) {
   }
 }
 
+void renderGameScreen(void) {
+  Player* currentPlayer =
+      PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
+
+  // Card container
+  CLAY({.layout = {.sizing = EXPAND_SIZING,
+                   .padding = CONTAINER_PADDING,
+                   .childGap = CARD_GAP,
+                   .layoutDirection = CLAY_TOP_TO_BOTTOM},
+        .cornerRadius = CONTAINER_CORNER_RADIUS,
+        .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
+    const int32_t CARDS_PER_ROW = 7;
+
+    for (int32_t row = 0; row < currentPlayer->hand.length;
+         row += CARDS_PER_ROW) {
+      CLAY({.layout = {
+                .sizing = EXPAND_SIZING,
+                .childAlignment = CHILD_ALIGNMENT_CENTER,
+                .childGap = 10,
+            }}) {
+        for (int32_t i = row;
+             i < row + CARDS_PER_ROW && i < currentPlayer->hand.length; i++) {
+          renderCard(CardArray_GetValue(&currentPlayer->hand, i), i);
+        }
+      }
+    }
+  }
+
+  CLAY({.layout = {.sizing = EXPAND_SIZING, .childGap = CONTAINER_GAP}}) {
+    // Selected hand container
+    CLAY({.layout = {.sizing = EXPAND_SIZING,
+                     .padding = CONTAINER_PADDING,
+                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                     .childAlignment = CHILD_ALIGNMENT_CENTER},
+          .cornerRadius = CONTAINER_CORNER_RADIUS,
+          .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
+      CLAY({0}) {
+        CLAY_TEXT(PLAYER_INDEX_TO_STRING[gameContext.currentPlayerIndex],
+                  CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+      }
+      if (gameContext.selectedHandKind != NO_HAND) {
+        CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.selectedHandKind],
+                  CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+      }
+      CLAY({.layout = {.sizing = EXPAND_SIZING}}) {}
+      if (gameContext.lastPlayedHandKind != NO_HAND) {
+        CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.lastPlayedHandKind],
+                  CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
+      }
+    }
+
+    // Other UI
+    CLAY({.layout = {.sizing = {.height = CLAY_SIZING_GROW(0),
+                                .width = CLAY_SIZING_PERCENT(.75)},
+                     .padding = CONTAINER_PADDING,
+                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
+          .cornerRadius = CONTAINER_CORNER_RADIUS,
+          .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
+      renderSeed();
+      renderActionButtons();
+    }
+  }
+}
+
+void renderGameOverScreen(void) {
+  CLAY({.layout = {.sizing = EXPAND_SIZING,
+                   .childAlignment = CHILD_ALIGNMENT_CENTER}}) {
+    CLAY_TEXT(PLAYER_INDEX_TO_STRING[gameContext.winnerIndex],
+              CLAY_TEXT_CONFIG(GAME_OVER_TEXT_CONFIG));
+    CLAY_TEXT(CLAY_STRING(" Wins!"), CLAY_TEXT_CONFIG(GAME_OVER_TEXT_CONFIG));
+  }
+}
+
 #ifdef CLAY_DEBUG
 bool triggeredDebugMode = false;
 
@@ -390,9 +478,10 @@ int gameLoop(void) {
   SUIT_TO_ICON[SPADES] = LoadTexture("resources/suits-spades.png");
 
   // Load fonts
-  Font fonts[1];
-  fonts[FONT_ID_BODY_16] =
-      LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400);
+  Font fonts[FONT_AMOUNT];
+  fonts[FONT_ID_UI] = LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400);
+  fonts[FONT_ID_GAME_OVER] =
+      LoadFontEx("resources/Roboto-Regular.ttf", 72, 0, 400);
 
   // Connect fonts to Clay
   Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
@@ -409,9 +498,6 @@ int gameLoop(void) {
     Clay_UpdateScrollContainers(
         true, (Clay_Vector2){scrollDelta.x, scrollDelta.y}, GetFrameTime());
 
-    Player* currentPlayer =
-        PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-
 #ifdef CLAY_DEBUG
     toggleDebugMode();
 #endif  // CLAY_DEBUG
@@ -423,67 +509,10 @@ int gameLoop(void) {
                      .childGap = CONTAINER_GAP,
                      .layoutDirection = CLAY_TOP_TO_BOTTOM},
           .backgroundColor = BACKGROUND_COLOR}) {
-      // Card container
-      CLAY({.layout = {.sizing = EXPAND_SIZING,
-                       .padding = CONTAINER_PADDING,
-                       .childGap = CARD_GAP,
-                       .layoutDirection = CLAY_TOP_TO_BOTTOM},
-            .cornerRadius = CONTAINER_CORNER_RADIUS,
-            .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
-        const int32_t CARDS_PER_ROW = 7;
-
-        for (int32_t row = 0; row < currentPlayer->hand.length;
-             row += CARDS_PER_ROW) {
-          CLAY({.layout = {
-                    .sizing = EXPAND_SIZING,
-                    .childAlignment = CHILD_ALIGNMENT_CENTER,
-                    .childGap = 10,
-                }}) {
-            for (int32_t i = row;
-                 i < row + CARDS_PER_ROW && i < currentPlayer->hand.length;
-                 i++) {
-              renderCard(CardArray_GetValue(&currentPlayer->hand, i), i);
-            }
-          }
-        }
-      }
-
-      CLAY({.layout = {.sizing = EXPAND_SIZING, .childGap = CONTAINER_GAP}}) {
-        // Selected hand container
-        CLAY({.layout = {.sizing = EXPAND_SIZING,
-                         .padding = CONTAINER_PADDING,
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                         .childAlignment = CHILD_ALIGNMENT_CENTER},
-              .cornerRadius = CONTAINER_CORNER_RADIUS,
-              .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
-          CLAY({0}) {
-            CLAY_TEXT(CLAY_STRING("Player "), CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
-            char playerNumber[1] = {'0' + (gameContext.currentPlayerIndex + 1)};
-            Clay_String playerNumberString = {.chars = playerNumber,
-                                              .length = 1};
-            CLAY_TEXT(playerNumberString, CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
-          }
-          if (gameContext.selectedHandKind != NO_HAND) {
-            CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.selectedHandKind],
-                      CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
-          }
-          CLAY({.layout = {.sizing = EXPAND_SIZING}}) {}
-          if (gameContext.lastPlayedHandKind != NO_HAND) {
-            CLAY_TEXT(HAND_KIND_TO_STRING[gameContext.lastPlayedHandKind],
-                      CLAY_TEXT_CONFIG(UI_TEXT_CONFIG));
-          }
-        }
-
-        // Other UI
-        CLAY({.layout = {.sizing = {.height = CLAY_SIZING_GROW(0),
-                                    .width = CLAY_SIZING_PERCENT(.75)},
-                         .padding = CONTAINER_PADDING,
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM},
-              .cornerRadius = CONTAINER_CORNER_RADIUS,
-              .backgroundColor = CONTAINER_BACKGROUND_COLOR}) {
-          renderSeed();
-          renderActionButtons();
-        }
+      if (gameContext.winnerIndex == -1) {
+        renderGameScreen();
+      } else {
+        renderGameOverScreen();
       }
     }
 
