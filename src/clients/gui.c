@@ -218,8 +218,11 @@ void handleDeselectAllButtonHover(Clay_ElementId elementId,
                                   Clay_PointerData pointerData,
                                   intptr_t userData) {
   (void)elementId;
-  (void)userData;
+  bool hasSelectedCards = (bool)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    if (!hasSelectedCards)
+      return;
+
     TraceLog(LOG_INFO, "deselected all cards");
     clearSelectedCards();
   }
@@ -302,6 +305,7 @@ void renderActionButtons(void) {
       CLAY_TEXT(CLAY_STRING("Skip"), CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
 
+    bool hasSelectedCards = gameContext.selectedCardIndexes.length > 0;
     CLAY({.id = CLAY_ID("DeselectAllButton"),
           .layout =
               {
@@ -310,10 +314,11 @@ void renderActionButtons(void) {
                   .padding = BUTTON_PADDING,
               },
           .cornerRadius = CONTAINER_CORNER_RADIUS,
-          .backgroundColor = Clay_PointerOver(CLAY_ID("DeselectAllButton"))
+          .backgroundColor = !hasSelectedCards ? DISABLED_COLOR
+                             : Clay_PointerOver(CLAY_ID("DeselectAllButton"))
                                  ? PRIMARY_COLOR_HOVER
                                  : PRIMARY_COLOR}) {
-      Clay_OnHover(handleDeselectAllButtonHover, 0);
+      Clay_OnHover(handleDeselectAllButtonHover, hasSelectedCards);
       CLAY_TEXT(CLAY_STRING("Deselect All"),
                 CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
