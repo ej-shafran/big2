@@ -39,6 +39,7 @@ const Clay_Color SECONDARY_COLOR = {255, 102, 102, 255};
 const Clay_Color SECONDARY_COLOR_HOVER = {245, 92, 92, 255};
 const Clay_Color DARK_COLOR = {0, 0, 26, 255};
 const Clay_Color DARK_COLOR_HOVER = {10, 10, 36, 255};
+const Clay_Color DISABLED_COLOR = {176, 176, 176, 255};
 const Clay_Color LIGHT_COLOR = {245, 245, 245, 255};
 const Clay_Color LIGHT_COLOR_HOVER = {225, 225, 225, 255};
 
@@ -247,14 +248,11 @@ void handlePlayButtonHover(Clay_ElementId elementId,
                            Clay_PointerData pointerData,
                            intptr_t userData) {
   (void)elementId;
-  (void)userData;
+  bool handIsPlayable = (bool)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
     Player* currentPlayer =
         PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
-    if (gameContext.selectedHandKind != NO_HAND &&
-        (isPlayable(&currentPlayer->hand, &gameContext.selectedCardIndexes,
-                    gameContext.selectedHandKind, &gameContext.lastPlayedHand,
-                    gameContext.lastPlayedHandKind))) {
+    if (gameContext.selectedHandKind != NO_HAND && handIsPlayable) {
       TraceLog(LOG_INFO, "played hand");
       skippedCount = 0;
       // Update last played hand
@@ -314,6 +312,12 @@ void renderActionButtons(void) {
       CLAY_TEXT(CLAY_STRING("Deselect All"),
                 CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
+    Player* currentPlayer =
+        PlayerArray_Get(&gameContext.players, gameContext.currentPlayerIndex);
+    bool handIsPlayable =
+        isPlayable(&currentPlayer->hand, &gameContext.selectedCardIndexes,
+                   gameContext.selectedHandKind, &gameContext.lastPlayedHand,
+                   gameContext.lastPlayedHandKind);
     CLAY({.id = CLAY_ID("PlayButton"),
           .layout =
               {
@@ -322,10 +326,11 @@ void renderActionButtons(void) {
                   .padding = BUTTON_PADDING,
               },
           .cornerRadius = CONTAINER_CORNER_RADIUS,
-          .backgroundColor = Clay_PointerOver(CLAY_ID("PlayButton"))
+          .backgroundColor = !handIsPlayable ? DISABLED_COLOR
+                             : Clay_PointerOver(CLAY_ID("PlayButton"))
                                  ? DARK_COLOR_HOVER
                                  : DARK_COLOR}) {
-      Clay_OnHover(handlePlayButtonHover, 0);
+      Clay_OnHover(handlePlayButtonHover, handIsPlayable);
       CLAY_TEXT(CLAY_STRING("Play"), CLAY_TEXT_CONFIG(DARK_BUTTON_TEXT_CONFIG));
     }
   }
