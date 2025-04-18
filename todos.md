@@ -1,4 +1,4 @@
-- [ ] Make player with 3 of Diamonds start
+- [x] Make player with 3 of Diamonds start
 - [ ] Implement "New Game" and "Restart"
 - [ ] Improve design
 - [ ] Add shift-to-select

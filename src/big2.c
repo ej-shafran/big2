@@ -41,6 +41,8 @@ bool CardIndex_Gt(int32_t a, int32_t b) {
   return a > b;
 }
 
+const Card THREE_OF_DIAMONDS = {.rank = RANK_3, .suit = DIAMONDS};
+
 GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
   char* seedString = Arena_Allocate(20 * sizeof(char), arena);
   int32_t seedStringLength = sprintf(seedString, "%" PRIx64, seed);
@@ -82,6 +84,9 @@ GameContext generateGame(uint64_t seed, int32_t playerCount, Arena* arena) {
       Card card = deck[cardIndex];
       deck[cardIndex] = deck[count - 1];
       count -= 1;
+
+      if (Card_Eq(card, THREE_OF_DIAMONDS))
+        gameContext.currentPlayerIndex = playerIndex;
 
       CardArray_InsertSorted(&player->hand, card, Card_Gt);
     }
